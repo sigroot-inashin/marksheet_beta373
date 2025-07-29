@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web マークシート</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            /* デフォルトのテーマカラー */
+            --primary-color: #A7FFEB; /* ミント */
+            --secondary-color: #64DD17; /* アクセントカラー（例として） */
+            --text-color: #333;
+            --border-color: #ccc;
+            --background-color: #f4f4f4;
+        }
+
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 900px;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: var(--primary-color);
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 auto; /* フレックスアイテムとして伸縮 */
+            min-width: 150px; /* 最小幅 */
+        }
+
+        .input-group label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        .input-group input[type="text"],
+        .input-group select {
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        button#generate-button, button#download-pdf-button {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            align-self: flex-end; /* 下揃え */
+            transition: background-color 0.3s ease;
+        }
+
+        button#generate-button:hover, button#download-pdf-button:hover {
+            background-color: var(--secondary-color); /* ホバー時の色 */
+        }
+
+        .marksheet-area {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* レスポンシブなカラム */
+            gap: 15px;
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: #fdfdfd;
+        }
+
+        .question {
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .question p {
+            margin: 0 0 10px 0;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        .options label {
+            display: inline-block;
+            margin-right: 15px;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .options input[type="radio"] {
+            margin-right: 5px;
+            accent-color: var(--primary-color); /* ラジオボタンの色 */
+        }
+
+        .correct-button {
+            background-color: #4CAF50; /* 緑 */
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 0.85rem;
+            transition: background-color 0.2s ease;
+        }
+
+        .correct-button.incorrect {
+            background-color: #f44336; /* 赤 */
+        }
+
+        .score-area {
+            text-align: right;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid var(--primary-color);
+            display: flex; /* PDFボタンを並べるためにflexboxを使用 */
+            justify-content: space-between; /* 要素を左右に配置 */
+            align-items: center; /* 垂直方向中央揃え */
+        }
+
+        .score-area h2 {
+            color: var(--primary-color);
+            font-size: 1.8rem;
+            margin: 0; /* h2のデフォルトマージンをリセット */
+        }
+
+        /* テーマカラーの定義 */
+        /* ミント (デフォルト) */
+        .theme-mint {
+            --primary-color: #A7FFEB;
+            --secondary-color: #64DD17;
+        }
+        /* ミントグリーン */
+        .theme-mint-green {
+            --primary-color: #C8E6C9;
+            --secondary-color: #81C784;
+        }
+        /* 黄緑 */
+        .theme-lime-green {
+            --primary-color: #CDDC39;
+            --secondary-color: #AFB42B;
+        }
+        /* ピンク */
+        .theme-pink {
+            --primary-color: #FFCDD2;
+            --secondary-color: #E91E63;
+        }
+        /* 赤 */
+        .theme-red {
+            --primary-color: #FFEBEE;
+            --secondary-color: #F44336;
+        }
+        /* 紫 */
+        .theme-purple {
+            --primary-color: #E1BEE7;
+            --secondary-color: #9C27B0;
+        }
+        /* 青 */
+        .theme-blue {
+            --primary-color: #BBDEFB;
+            --secondary-color: #2196F3;
+        }
+        /* 水色 */
+        .theme-sky-blue {
+            --primary-color: #B2EBF2;
+            --secondary-color: #00BCD4;
+        }
+        /* 黄色 */
+        .theme-yellow {
+            --primary-color: #FFF9C4;
+            --secondary-color: #FFEB3B;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Web マークシート</h1>
+
+        <div class="controls">
+            <div class="input-group">
+                <label for="name">氏名:</label>
+                <input type="text" id="name" placeholder="氏名を入力してください">
+            </div>
+            <div class="input-group">
+                <label for="subject">科目:</label>
+                <input type="text" id="subject" placeholder="科目名を入力してください">
+            </div>
+
+            <div class="input-group">
+                <label for="question-count">マーク数:</label>
+                <select id="question-count">
+                    <option value="100">100問</option>
+                    <option value="120">120問</option>
+                    <option value="200">200問</option>
+                    <option value="300">300問</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label for="mark-type">マーク形式:</label>
+                <select id="mark-type">
+                    <option value="numeric">1～5</option>
+                    <option value="alphabetical">A～E</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label for="theme-color">テーマカラー:</label>
+                <select id="theme-color">
+                    <option value="mint">ミント</option>
+                    <option value="mint-green">ミントグリーン</option>
+                    <option value="lime-green">黄緑</option>
+                    <option value="pink">ピンク</option>
+                    <option value="red">赤</option>
+                    <option value="purple">紫</option>
+                    <option value="blue">青</option>
+                    <option value="sky-blue">水色</option>
+                    <option value="yellow">黄色</option>
+                </select>
+            </div>
+
+            <button id="generate-button">マークシート生成</button>
+        </div>
+
+        <div id="pdf-content-area">
+            <div id="marksheet-area" class="marksheet-area">
+                </div>
+        </div>
+
+        <div class="score-area">
+            <h2>合計点: <span id="total-score">0</span> 点</h2>
+            <button id="download-pdf-button">PDFでダウンロード</button>
+        </div>
+    </div>
+
+    <script>
+        // jsPDFをグローバルスコープで利用できるように設定
+        const { jsPDF } = window.jspdf;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const generateButton = document.getElementById('generate-button');
+            const questionCountSelect = document.getElementById('question-count');
+            const markTypeSelect = document.getElementById('mark-type');
+            const themeColorSelect = document.getElementById('theme-color');
+            const marksheetArea = document.getElementById('marksheet-area');
+            const totalScoreSpan = document.getElementById('total-score');
+            const nameInput = document.getElementById('name');
+            const subjectInput = document.getElementById('subject');
+            const downloadPdfButton = document.getElementById('download-pdf-button'); // PDFダウンロードボタン
+            const pdfContentArea = document.getElementById('pdf-content-area'); // PDF化するコンテンツエリア
+
+            let correctAnswers = {}; // 各問題の正誤状態を管理するオブジェクト
+
+            // 初期テーマカラーの適用
+            applyThemeColor(themeColorSelect.value);
+
+            // テーマカラー変更イベントリスナー
+            themeColorSelect.addEventListener('change', (event) => {
+                applyThemeColor(event.target.value);
+            });
+
+            // マークシート生成ボタンのイベントリスナー
+            generateButton.addEventListener('click', generateMarksheet);
+
+            // PDFダウンロードボタンのイベントリスナー
+            downloadPdfButton.addEventListener('click', downloadMarksheetAsPdf);
+
+
+            // マークシートを生成する関数
+            function generateMarksheet() {
+                const questionCount = parseInt(questionCountSelect.value);
+                const markType = markTypeSelect.value;
+                marksheetArea.innerHTML = ''; // 既存のマークシートをクリア
+                correctAnswers = {}; // 正誤状態をリセット
+                updateTotalScore(); // スコアをリセット
+
+                for (let i = 1; i <= questionCount; i++) {
+                    const questionDiv = document.createElement('div');
+                    questionDiv.classList.add('question');
+                    questionDiv.innerHTML = `<p>問 ${i}</p>`;
+
+                    const optionsDiv = document.createElement('div');
+                    optionsDiv.classList.add('options');
+
+                    const options = markType === 'numeric' ? ['1', '2', '3', '4', '5'] : ['A', 'B', 'C', 'D', 'E'];
+
+                    options.forEach(option => {
+                        const label = document.createElement('label');
+                        const radio = document.createElement('input');
+                        radio.type = 'radio';
+                        radio.name = `q${i}`; // 各問題に固有のname属性
+                        radio.value = option;
+                        label.appendChild(radio);
+                        label.appendChild(document.createTextNode(option));
+                        optionsDiv.appendChild(label);
+                    });
+
+                    const correctButton = document.createElement('button');
+                    correctButton.classList.add('correct-button');
+                    correctButton.textContent = '正解';
+                    correctButton.dataset.questionId = i; // どの問題のボタンか識別
+                    correctAnswers[i] = false; // 初期状態は不正解
+
+                    correctButton.addEventListener('click', (event) => {
+                        const qId = event.target.dataset.questionId;
+                        correctAnswers[qId] = !correctAnswers[qId]; // 正誤をトグル
+                        event.target.classList.toggle('incorrect', !correctAnswers[qId]); // クラスをトグル
+                        event.target.textContent = correctAnswers[qId] ? '正解' : '不正解';
+                        updateTotalScore();
+                    });
+
+                    questionDiv.appendChild(optionsDiv);
+                    questionDiv.appendChild(correctButton);
+                    marksheetArea.appendChild(questionDiv);
+                }
+            }
+
+            // 合計点を更新する関数
+            function updateTotalScore() {
+                let score = 0;
+                for (const qId in correctAnswers) {
+                    if (correctAnswers[qId]) {
+                        score++;
+                    }
+                }
+                totalScoreSpan.textContent = score;
+            }
+
+            // テーマカラーを適用する関数
+            function applyThemeColor(colorName) {
+                // 既存のテーマクラスを削除
+                document.body.className = '';
+                // 新しいテーマクラスを追加
+                document.body.classList.add(`theme-${colorName}`);
+            }
+
+            // PDFとしてマークシートをダウンロードする関数
+            async function downloadMarksheetAsPdf() {
+                // PDFに含める要素を選択
+                const element = document.querySelector('.container'); // コンテナ全体をPDF化
+
+                // 氏名と科目名を取得
+                const studentName = nameInput.value || "名無し";
+                const subjectName = subjectInput.value || "不明な科目";
+                const totalScore = totalScoreSpan.textContent;
+
+                // PDF生成時の一時的なHTMLを追加（PDFに氏名・科目・合計点を表示するため）
+                const tempHeader = document.createElement('div');
+                tempHeader.style.paddingBottom = '20px'; // スペース調整
+                tempHeader.innerHTML = `
+                    <h1 style="text-align: center; color: #333;">採点済みマークシート</h1>
+                    <p style="text-align: right; margin-bottom: 5px; font-size: 1.1em;"><strong>氏名:</strong> ${studentName}</p>
+                    <p style="text-align: right; margin-bottom: 5px; font-size: 1.1em;"><strong>科目:</strong> ${subjectName}</p>
+                    <p style="text-align: right; font-size: 1.5em; font-weight: bold; color: #007BFF;">合計点: ${totalScore} 点</p>
+                    <hr style="border: 0; border-top: 1px dashed #ccc; margin: 20px 0;">
+                `;
+
+                // 一時的にマークシートエリアの前にヘッダーを追加
+                marksheetArea.before(tempHeader);
+
+                try {
+                    const canvas = await html2canvas(element, {
+                        scale: 2, // 解像度を上げる
+                        useCORS: true, // 画像などを利用する場合にCORSを有効にする
+                        windowWidth: element.scrollWidth, // コンテンツの幅に合わせてキャプチャ
+                        windowHeight: element.scrollHeight // コンテンツの高さに合わせてキャプチャ
+                    });
+
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdf = new jsPDF('p', 'mm', 'a4'); // 'p' for portrait, 'mm' for units, 'a4' for size
+
+                    const imgWidth = 210; // A4幅（mm）
+                    const pageHeight = 297; // A4高さ（mm）
+                    const imgHeight = canvas.height * imgWidth / canvas.width;
+                    let heightLeft = imgHeight;
+                    let position = 0;
+
+                    // ページを追加して画像を配置
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+
+                    while (heightLeft >= 0) {
+                        position = heightLeft - imgHeight;
+                        pdf.addPage();
+                        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                        heightLeft -= pageHeight;
+                    }
+
+                    // ダウンロード時のファイル名
+                    const filename = `${studentName}_${subjectName}_マークシート_${totalScore}点.pdf`;
+                    pdf.save(filename);
+
+                } catch (error) {
+                    console.error("PDF生成中にエラーが発生しました:", error);
+                    alert("PDFの生成に失敗しました。ブラウザの拡大率やコンテンツの量をご確認ください。");
+                } finally {
+                    // 処理が終わったら一時的なヘッダーを削除
+                    tempHeader.remove();
+                }
+            }
+
+            // ページ読み込み時に一度マークシートを生成
+            generateMarksheet();
+        });
+    </script>
+</body>
+</html>
