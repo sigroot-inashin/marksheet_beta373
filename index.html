@@ -238,6 +238,15 @@
             border-color: #F44336;
         }
 
+        /* 新しいマーク形式のスタイル */
+        .option-input[value="+"]:checked + .custom-mark {
+            background-color: #4CAF50; /* 緑 */
+            border-color: #4CAF50;
+        }
+        .option-input[value="-"]:checked + .custom-mark {
+            background-color: #F44336; /* 赤 */
+            border-color: #F44336;
+        }
 
         .score-area {
             text-align: right;
@@ -247,12 +256,27 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap; /* 小さい画面で折り返す */
         }
 
         .score-area h2 {
             color: var(--primary-color);
             font-size: 1.8rem;
             margin: 0;
+        }
+
+        .section-score {
+            width: 100%;
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px dashed var(--border-color);
+        }
+
+        .section-score h3 {
+            color: var(--secondary-color);
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+            text-align: right;
         }
 
         /* --- テーマカラーの定義 --- */
@@ -339,7 +363,7 @@
         /* 赤 */
         .theme-red {
             --primary-color: #F44336; --primary-color-rgb: 244, 67, 54;
-            --secondary-color: #D32F2F; /* ダークレッド */
+            --secondary-color: #D32F2F;
             --marksheet-bg-color: #FFEBEE; /* 淡い赤 */
         }
     </style>
@@ -375,7 +399,8 @@
             <div class="input-group">
                 <label for="mark-type">マーク形式:</label>
                 <select id="mark-type">
-                    <option value="numeric">1～5</option>
+                    <option value="numeric">0～9</option>
+                    <option value="numeric-plus-minus">0～9, +, -</option>
                     <option value="alphabetical">A～E</option>
                 </select>
             </div>
@@ -395,17 +420,21 @@
                     <option value="gold">金</option>
                     <option value="silver">銀</option>
                     <option value="copper">銅</option>
-                    <option value="orange">オレンジ</option> <option value="red">赤</option>     </select>
+                    <option value="orange">オレンジ</option>
+                    <option value="red">赤</option>
+                </select>
             </div>
 
             <button id="generate-button">マークシート生成</button>
         </div>
 
         <div id="marksheet-area" class="marksheet-area">
-            </div>
+        </div>
 
         <div class="score-area">
             <h2>合計点: <span id="total-score">0</span> 点</h2>
+            <div id="section-scores" style="width: 100%;">
+                </div>
             <button id="download-pdf-button">PDFでダウンロード</button>
         </div>
     </div>
@@ -420,17 +449,16 @@
             const themeColorSelect = document.getElementById('theme-color');
             const marksheetArea = document.getElementById('marksheet-area');
             const totalScoreSpan = document.getElementById('total-score');
+            const sectionScoresDiv = document.getElementById('section-scores');
             const nameInput = document.getElementById('name');
             const subjectInput = document.getElementById('subject');
             const dateInput = document.getElementById('date');
             const downloadPdfButton = document.getElementById('download-pdf-button');
 
-            // 各問題の正誤マークの状態を管理するオブジェクト
-            // キーはquestionId, 値は'正'または'誤'、または未選択
-            let correctnessSelection = {}; 
+            let correctnessSelection = {}; // キーはquestionId, 値は'正'または'誤'、または未選択
 
             // 初期テーマカラーの適用
-            themeColorSelect.value = 'green'; 
+            themeColorSelect.value = 'green';
             applyThemeColor(themeColorSelect.value);
 
             // テーマカラー変更イベントリスナー
@@ -453,26 +481,30 @@
                 correctnessSelection = {}; // 正誤状態をリセット
                 updateTotalScore(); // スコアをリセット
 
-                const options = markType === 'numeric' ? ['1', '2', '3', '4', '5'] : ['A', 'B', 'C', 'D', 'E'];
+                let options;
+                if (markType === 'numeric') {
+                    options = Array.from({ length: 10 }, (_, i) => i.toString()); // 0から9
+                } else if (markType === 'numeric-plus-minus') {
+                    options = Array.from({ length: 10 }, (_, i) => i.toString()).concat(['+', '-']); // 0から9, +, -
+                } else { // alphabetical
+                    options = ['A', 'B', 'C', 'D', 'E'];
+                }
 
                 for (let i = 1; i <= questionCount; i++) {
                     const questionContainerDiv = document.createElement('div');
                     questionContainerDiv.classList.add('question-container');
 
-                    // 問題番号と標準選択肢のコンテナ
                     const questionContentDiv = document.createElement('div');
                     questionContentDiv.style.display = 'flex';
-                    questionContentDiv.style.flexDirection = 'column'; // 縦方向に並べる
-                    questionContentDiv.style.alignItems = 'flex-start'; // 左寄せ
+                    questionContentDiv.style.flexDirection = 'column';
+                    questionContentDiv.style.alignItems = 'flex-start';
                     questionContentDiv.style.width = '100%';
-
 
                     const questionNumberSpan = document.createElement('span');
                     questionNumberSpan.classList.add('question-number');
                     questionNumberSpan.textContent = i + '.';
                     questionContentDiv.appendChild(questionNumberSpan);
                     
-                    // 標準の選択肢（1-5またはA-E）
                     const optionsStandardDiv = document.createElement('div');
                     optionsStandardDiv.classList.add('options-standard');
                     options.forEach(option => {
@@ -481,7 +513,7 @@
 
                         const radio = document.createElement('input');
                         radio.type = 'radio';
-                        radio.name = `q${i}_answer`; // 各問題の回答用name属性
+                        radio.name = `q${i}_answer`;
                         radio.value = option;
                         radio.classList.add('option-input');
                         label.appendChild(radio);
@@ -493,11 +525,10 @@
 
                         optionsStandardDiv.appendChild(label);
                     });
-                    questionContentDiv.appendChild(optionsStandardDiv); // questionContentDivに標準選択肢を追加
-                    questionContainerDiv.appendChild(questionContentDiv); // questionContainerDivにquestionContentDivを追加
+                    questionContentDiv.appendChild(optionsStandardDiv);
+                    questionContainerDiv.appendChild(questionContentDiv);
 
 
-                    // 正誤の選択肢（正・誤）
                     const correctnessSectionDiv = document.createElement('div');
                     correctnessSectionDiv.classList.add('correctness-section');
                     
@@ -514,10 +545,9 @@
 
                         const radio = document.createElement('input');
                         radio.type = 'radio';
-                        radio.name = `q${i}_correctness`; // 各問題の正誤判定用name属性
+                        radio.name = `q${i}_correctness`;
                         radio.value = type;
                         radio.classList.add('option-input');
-                        // 正誤マークが選択されたらスコアを更新
                         radio.addEventListener('change', () => {
                             correctnessSelection[i] = radio.value;
                             updateTotalScore();
@@ -525,7 +555,7 @@
                         label.appendChild(radio);
 
                         const customMark = document.createElement('span');
-                        customMark.classList.add('custom-mark', 'correctness-mark'); // 四角いマーク用クラス
+                        customMark.classList.add('custom-mark', 'correctness-mark');
                         customMark.textContent = type;
                         label.appendChild(customMark);
 
@@ -533,21 +563,40 @@
                     });
                     correctnessSectionDiv.appendChild(correctnessOptionsDiv);
                     
-                    questionContainerDiv.appendChild(correctnessSectionDiv); // questionContainerDivに正誤セクションを追加
+                    questionContainerDiv.appendChild(correctnessSectionDiv);
                     marksheetArea.appendChild(questionContainerDiv);
                 }
             }
 
-            // 合計点を更新する関数
+            // 合計点とセクションスコアを更新する関数
             function updateTotalScore() {
-                let score = 0;
-                // correctnessSelectionオブジェクトを反復処理し、'正'が選択されている数を数える
-                for (const qId in correctnessSelection) {
-                    if (correctnessSelection[qId] === '正') {
-                        score++;
+                let totalScore = 0;
+                const questionCount = parseInt(questionCountSelect.value);
+                const questionsPerSection = 20;
+                sectionScoresDiv.innerHTML = ''; // Clear previous section scores
+
+                let currentSectionScore = 0;
+                let sectionNum = 1;
+
+                for (let i = 1; i <= questionCount; i++) {
+                    if (correctnessSelection[i] === '正') {
+                        totalScore++;
+                        currentSectionScore++;
+                    }
+
+                    if (i % questionsPerSection === 0 || i === questionCount) {
+                        const sectionScoreElement = document.createElement('div');
+                        sectionScoreElement.classList.add('section-score');
+                        const sectionTitle = (i === questionCount && questionCount % questionsPerSection !== 0)
+                            ? `セクション ${sectionNum} (問 ${((sectionNum - 1) * questionsPerSection) + 1} - ${i})`
+                            : `セクション ${sectionNum} (問 ${((sectionNum - 1) * questionsPerSection) + 1} - ${i})`;
+                        sectionScoreElement.innerHTML = `<h3>${sectionTitle}: ${currentSectionScore} 点</h3>`;
+                        sectionScoresDiv.appendChild(sectionScoreElement);
+                        currentSectionScore = 0; // Reset for the next section
+                        sectionNum++;
                     }
                 }
-                totalScoreSpan.textContent = score;
+                totalScoreSpan.textContent = totalScore;
             }
 
             // テーマカラーを適用する関数
@@ -575,11 +624,18 @@
                 const primaryColor = getComputedStyle(document.body).getPropertyValue('--primary-color');
                 const primaryColorRgb = getComputedStyle(document.body).getPropertyValue('--primary-color-rgb');
                 
+                let sectionScoresHtml = '';
+                sectionScoresDiv.querySelectorAll('h3').forEach(h3 => {
+                    sectionScoresHtml += `<p style="text-align: right; margin-right: 50px; margin-bottom: 5px; font-size: 1.1em; color: var(--secondary-color);">${h3.textContent}</p>`;
+                });
+
+
                 tempHeader.innerHTML = `
                     <h1 style="color: ${primaryColor}; font-size: 2em; margin-bottom: 10px;">採点済みマークシート</h1>
                     <p style="text-align: right; margin-right: 50px; margin-bottom: 5px; font-size: 1.1em;"><strong>氏名:</strong> ${studentName}</p>
                     <p style="text-align: right; margin-right: 50px; margin-bottom: 5px; font-size: 1.1em;"><strong>科目:</strong> ${subjectName}</p>
                     <p style="text-align: right; margin-right: 50px; margin-bottom: 15px; font-size: 1.1em;"><strong>実施日:</strong> ${implementationDate}</p>
+                    ${sectionScoresHtml}
                     <p style="text-align: right; margin-right: 50px; font-size: 1.8em; font-weight: bold; color: ${primaryColor};">合計点: ${totalScore} 点</p>
                     <hr style="border: 0; border-top: 2px solid ${primaryColor}; margin: 20px 50px;">
                 `;
