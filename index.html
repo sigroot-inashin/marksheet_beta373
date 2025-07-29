@@ -330,6 +330,18 @@
             --secondary-color: #A52A2A; /* ブラウン */
             --marksheet-bg-color: #F7E7DC; /* 淡いクリーム色 */
         }
+        /* オレンジ */
+        .theme-orange {
+            --primary-color: #FF9800; --primary-color-rgb: 255, 152, 0;
+            --secondary-color: #FB8C00; /* ダークオレンジ */
+            --marksheet-bg-color: #FFF3E0; /* 淡いオレンジ */
+        }
+        /* 赤 */
+        .theme-red {
+            --primary-color: #F44336; --primary-color-rgb: 244, 67, 54;
+            --secondary-color: #D32F2F; /* ダークレッド */
+            --marksheet-bg-color: #FFEBEE; /* 淡い赤 */
+        }
     </style>
 </head>
 <body>
@@ -383,7 +395,7 @@
                     <option value="gold">金</option>
                     <option value="silver">銀</option>
                     <option value="copper">銅</option>
-                </select>
+                    <option value="orange">オレンジ</option> <option value="red">赤</option>     </select>
             </div>
 
             <button id="generate-button">マークシート生成</button>
