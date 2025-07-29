@@ -10,6 +10,7 @@
         :root {
             /* デフォルトのテーマカラー */
             --primary-color: #A7FFEB; /* ミント */
+            --primary-color-rgb: 167, 255, 235;
             --secondary-color: #64DD17; /* アクセントカラー（例として） */
             --text-color: #333;
             --border-color: #ccc;
@@ -75,6 +76,7 @@
         }
 
         .input-group input[type="text"],
+        .input-group input[type="date"],
         .input-group select {
             padding: 10px 12px;
             border: 1px solid var(--border-color);
@@ -84,6 +86,7 @@
             transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
         .input-group input[type="text"]:focus,
+        .input-group input[type="date"]:focus,
         .input-group select:focus {
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.2);
@@ -237,11 +240,11 @@
             --secondary-color: #64DD17;
             --marksheet-bg-color: #EEFFFA;
         }
-        /* ミントグリーン */
-        .theme-mint-green {
-            --primary-color: #C8E6C9; --primary-color-rgb: 200, 230, 201;
-            --secondary-color: #81C784;
-            --marksheet-bg-color: #F1F8F1;
+        /* 緑 */
+        .theme-green {
+            --primary-color: #4CAF50; --primary-color-rgb: 76, 175, 80;
+            --secondary-color: #388E3C;
+            --marksheet-bg-color: #E8F5E9;
         }
         /* 黄緑 */
         .theme-lime-green {
@@ -249,41 +252,35 @@
             --secondary-color: #AFB42B;
             --marksheet-bg-color: #FCFDE7;
         }
+        /* 黄色 */
+        .theme-yellow {
+            --primary-color: #FFEB3B; --primary-color-rgb: 255, 235, 59;
+            --secondary-color: #FBC02D;
+            --marksheet-bg-color: #FFFDE7;
+        }
+        /* マゼンタ */
+        .theme-magenta {
+            --primary-color: #FF00FF; --primary-color-rgb: 255, 0, 255;
+            --secondary-color: #C2185B;
+            --marksheet-bg-color: #FFEFFD;
+        }
         /* ピンク */
         .theme-pink {
             --primary-color: #FFCDD2; --primary-color-rgb: 255, 205, 210;
             --secondary-color: #E91E63;
             --marksheet-bg-color: #FFF0F2;
         }
-        /* 赤 */
-        .theme-red {
-            --primary-color: #FFEBEE; --primary-color-rgb: 255, 235, 238;
-            --secondary-color: #F44336;
-            --marksheet-bg-color: #FFF8F9;
+        /* コバルトブルー */
+        .theme-cobalt-blue {
+            --primary-color: #0047AB; --primary-color-rgb: 0, 71, 171;
+            --secondary-color: #002884;
+            --marksheet-bg-color: #E6F0FF;
         }
-        /* 紫 */
-        .theme-purple {
-            --primary-color: #E1BEE7; --primary-color-rgb: 225, 190, 231;
-            --secondary-color: #9C27B0;
-            --marksheet-bg-color: #F9F0FA;
-        }
-        /* 青 */
-        .theme-blue {
-            --primary-color: #BBDEFB; --primary-color-rgb: 187, 222, 251;
-            --secondary-color: #2196F3;
-            --marksheet-bg-color: #F0F7FF;
-        }
-        /* 水色 */
+        /* スカイブルー */
         .theme-sky-blue {
-            --primary-color: #B2EBF2; --primary-color-rgb: 178, 235, 242;
-            --secondary-color: #00BCD4;
-            --marksheet-bg-color: #EFFCFF;
-        }
-        /* 黄色 */
-        .theme-yellow {
-            --primary-color: #FFF9C4; --primary-color-rgb: 255, 249, 196;
-            --secondary-color: #FFEB3B;
-            --marksheet-bg-color: #FFFFF0;
+            --primary-color: #87CEEB; --primary-color-rgb: 135, 206, 235;
+            --secondary-color: #4CAF50; /* 緑に近い色 */
+            --marksheet-bg-color: #EAF9FF;
         }
     </style>
 </head>
@@ -300,14 +297,18 @@
                 <label for="subject">科目:</label>
                 <input type="text" id="subject" placeholder="科目名を入力してください">
             </div>
+            <div class="input-group">
+                <label for="date">実施日:</label>
+                <input type="date" id="date">
+            </div>
 
             <div class="input-group">
                 <label for="question-count">マーク数:</label>
                 <select id="question-count">
                     <option value="100">100問</option>
                     <option value="120">120問</option>
+                    <option value="150">150問</option>
                     <option value="200">200問</option>
-                    <option value="300">300問</option>
                 </select>
             </div>
 
@@ -323,14 +324,13 @@
                 <label for="theme-color">テーマカラー:</label>
                 <select id="theme-color">
                     <option value="mint">ミント</option>
-                    <option value="mint-green">ミントグリーン</option>
+                    <option value="green">緑</option>
                     <option value="lime-green">黄緑</option>
-                    <option value="pink">ピンク</option>
-                    <option value="red">赤</option>
-                    <option value="purple">紫</option>
-                    <option value="blue">青</option>
-                    <option value="sky-blue">水色</option>
                     <option value="yellow">黄色</option>
+                    <option value="magenta">マゼンタ</option>
+                    <option value="pink">ピンク</option>
+                    <option value="cobalt-blue">コバルトブルー</option>
+                    <option value="sky-blue">スカイブルー</option>
                 </select>
             </div>
 
@@ -347,7 +347,6 @@
     </div>
 
     <script>
-        // jsPDFをグローバルスコープで利用できるように設定
         const { jsPDF } = window.jspdf;
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -359,7 +358,8 @@
             const totalScoreSpan = document.getElementById('total-score');
             const nameInput = document.getElementById('name');
             const subjectInput = document.getElementById('subject');
-            const downloadPdfButton = document.getElementById('download-pdf-button'); // PDFダウンロードボタン
+            const dateInput = document.getElementById('date');
+            const downloadPdfButton = document.getElementById('download-pdf-button');
 
             let correctAnswers = {}; // 各問題の正誤状態を管理するオブジェクト
 
@@ -394,7 +394,7 @@
 
                     const questionNumberSpan = document.createElement('span');
                     questionNumberSpan.classList.add('question-number');
-                    questionNumberSpan.textContent = i + '.'; // 例: 1. 2.
+                    questionNumberSpan.textContent = i + '.';
                     questionDiv.appendChild(questionNumberSpan);
 
                     const optionsDiv = document.createElement('div');
@@ -423,7 +423,7 @@
                     correctButton.classList.add('correct-button');
                     correctButton.textContent = '正解';
                     correctButton.dataset.questionId = i; // どの問題のボタンか識別
-                    correctAnswers[i] = false; // 初期状態は不正解
+                    correctAnswers[i] = false; // 初期状態は不正解（0点）
 
                     correctButton.addEventListener('click', (event) => {
                         const qId = event.target.dataset.questionId;
@@ -452,10 +452,8 @@
 
             // テーマカラーを適用する関数
             function applyThemeColor(colorName) {
-                // 既存のテーマクラスを削除
-                document.body.className = '';
-                // 新しいテーマクラスを追加
-                document.body.classList.add(`theme-${colorName}`);
+                document.body.className = ''; // 既存のテーマクラスを削除
+                document.body.classList.add(`theme-${colorName}`); // 新しいテーマクラスを追加
             }
 
             // PDFとしてマークシートをダウンロードする関数
@@ -464,9 +462,10 @@
 
                 const studentName = nameInput.value || "名無し";
                 const subjectName = subjectInput.value || "不明な科目";
+                const implementationDate = dateInput.value || "日付不明";
                 const totalScore = totalScoreSpan.textContent;
 
-                // PDF生成時の一時的なHTMLを追加（PDFに氏名・科目・合計点を表示するため）
+                // PDF生成時の一時的なHTMLを追加（PDFに氏名・科目・実施日・合計点を表示するため）
                 const tempHeader = document.createElement('div');
                 tempHeader.style.padding = '20px 0';
                 tempHeader.style.textAlign = 'center';
@@ -475,28 +474,26 @@
                 tempHeader.innerHTML = `
                     <h1 style="color: var(--primary-color); font-size: 2em; margin-bottom: 10px;">採点済みマークシート</h1>
                     <p style="text-align: right; margin-right: 50px; margin-bottom: 5px; font-size: 1.1em;"><strong>氏名:</strong> ${studentName}</p>
-                    <p style="text-align: right; margin-right: 50px; margin-bottom: 15px; font-size: 1.1em;"><strong>科目:</strong> ${subjectName}</p>
+                    <p style="text-align: right; margin-right: 50px; margin-bottom: 5px; font-size: 1.1em;"><strong>科目:</strong> ${subjectName}</p>
+                    <p style="text-align: right; margin-right: 50px; margin-bottom: 15px; font-size: 1.1em;"><strong>実施日:</strong> ${implementationDate}</p>
                     <p style="text-align: right; margin-right: 50px; font-size: 1.8em; font-weight: bold; color: var(--primary-color);">合計点: ${totalScore} 点</p>
                     <hr style="border: 0; border-top: 2px solid var(--primary-color); margin: 20px 50px;">
                 `;
 
-                // 一時的にマークシートエリアの前にヘッダーを追加
                 marksheetArea.before(tempHeader);
 
                 try {
                     // スクロールバーが表示されないように、一時的にoverflowをhiddenにする
                     document.body.style.overflow = 'hidden';
 
-                    // HTMLコンテンツをキャプチャ
                     const canvas = await html2canvas(element, {
                         scale: 2, // 解像度を上げる
                         useCORS: true,
-                        // PDF化する際に不要な要素を無視 (例: 生成・PDFボタン)
+                        // PDF化する際に不要な要素を無視
                         ignoreElements: (node) => {
                             return node.id === 'generate-button' || node.id === 'download-pdf-button' || node.classList.contains('controls');
                         },
-                        // 背景色を透過にしない (白い背景を確実に描画)
-                        backgroundColor: null, // null にすると CSS の背景が適用される
+                        backgroundColor: null,
                     });
 
                     const imgData = canvas.toDataURL('image/png');
@@ -511,7 +508,7 @@
                     pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
                     heightLeft -= pageHeight;
 
-                    while (heightLeft >= -1) { // わずかな残りを考慮して-1
+                    while (heightLeft >= -1) {
                         position = heightLeft - imgHeight;
                         pdf.addPage();
                         pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
@@ -525,7 +522,6 @@
                     console.error("PDF生成中にエラーが発生しました:", error);
                     alert("PDFの生成に失敗しました。ブラウザの拡大率やコンテンツの量をご確認ください。");
                 } finally {
-                    // 処理が終わったら一時的なヘッダーを削除し、overflowを元に戻す
                     tempHeader.remove();
                     document.body.style.overflow = '';
                 }
