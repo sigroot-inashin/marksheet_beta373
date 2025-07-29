@@ -615,22 +615,23 @@
                 const totalScore = totalScoreSpan.textContent;
 
                 // PDF生成時の一時的なHTMLを追加（PDFに氏名・科目・実施日・合計点を表示するため）
-                const tempHeader = document.createElement('div');
-                tempHeader.style.padding = '20px 0';
-                tempHeader.style.textAlign = 'center';
-                tempHeader.style.backgroundColor = 'white'; // PDF内のヘッダー背景色
-                tempHeader.style.borderRadius = '8px';
-                // HTML要素からCSS変数を取得して適用
+                const pdfHeader = document.createElement('div');
+                pdfHeader.classList.add('pdf-header'); // Add a class for identification
+                pdfHeader.style.padding = '20px';
+                pdfHeader.style.textAlign = 'center';
+                pdfHeader.style.backgroundColor = 'white';
+                pdfHeader.style.borderRadius = '8px';
+                pdfHeader.style.marginBottom = '20px'; // Space before the marksheet
+
                 const primaryColor = getComputedStyle(document.body).getPropertyValue('--primary-color');
-                const primaryColorRgb = getComputedStyle(document.body).getPropertyValue('--primary-color-rgb');
+                const secondaryColor = getComputedStyle(document.body).getPropertyValue('--secondary-color');
                 
                 let sectionScoresHtml = '';
                 sectionScoresDiv.querySelectorAll('h3').forEach(h3 => {
-                    sectionScoresHtml += `<p style="text-align: right; margin-right: 50px; margin-bottom: 5px; font-size: 1.1em; color: var(--secondary-color);">${h3.textContent}</p>`;
+                    sectionScoresHtml += `<p style="text-align: right; margin-right: 50px; margin-bottom: 5px; font-size: 1.1em; color: ${secondaryColor};">${h3.textContent}</p>`;
                 });
 
-
-                tempHeader.innerHTML = `
+                pdfHeader.innerHTML = `
                     <h1 style="color: ${primaryColor}; font-size: 2em; margin-bottom: 10px;">採点済みマークシート</h1>
                     <p style="text-align: right; margin-right: 50px; margin-bottom: 5px; font-size: 1.1em;"><strong>氏名:</strong> ${studentName}</p>
                     <p style="text-align: right; margin-right: 50px; margin-bottom: 5px; font-size: 1.1em;"><strong>科目:</strong> ${subjectName}</p>
@@ -640,27 +641,40 @@
                     <hr style="border: 0; border-top: 2px solid ${primaryColor}; margin: 20px 50px;">
                 `;
 
-                marksheetArea.before(tempHeader);
+                // Temporarily append the header to the body for html2canvas to render it
+                document.body.prepend(pdfHeader);
+
 
                 try {
-                    // スクロールバーが表示されないように、一時的にoverflowをhiddenにする
-                    document.body.style.overflow = 'hidden';
+                    // Temporarily hide parts of the UI that shouldn't be in the PDF
+                    const controls = document.querySelector('.controls');
+                    const scoreArea = document.querySelector('.score-area');
+                    const originalControlsDisplay = controls.style.display;
+                    const originalScoreAreaDisplay = scoreArea.style.display;
+                    controls.style.display = 'none';
+                    scoreArea.style.display = 'none';
+                    downloadPdfButton.style.display = 'none'; // Hide the button itself
 
-                    const canvas = await html2canvas(element, {
-                        scale: 2, // 解像度を上げる
+                    // Create a temporary element that combines the header and marksheet area
+                    const combinedContent = document.createElement('div');
+                    combinedContent.appendChild(pdfHeader.cloneNode(true)); // Clone header to keep original
+                    combinedContent.appendChild(marksheetArea.cloneNode(true)); // Clone marksheet area
+
+                    // Append the combined content to the body temporarily for capture
+                    document.body.appendChild(combinedContent);
+
+
+                    const canvas = await html2canvas(combinedContent, {
+                        scale: 2, // Increase resolution
                         useCORS: true,
-                        // PDF化する際に不要な要素を無視
-                        ignoreElements: (node) => {
-                            return node.id === 'generate-button' || node.id === 'download-pdf-button' || node.classList.contains('controls');
-                        },
                         backgroundColor: null,
                     });
 
                     const imgData = canvas.toDataURL('image/png');
                     const pdf = new jsPDF('p', 'mm', 'a4');
 
-                    const imgWidth = 210; // A4幅（mm）
-                    const pageHeight = 297; // A4高さ（mm）
+                    const imgWidth = 210; // A4 width (mm)
+                    const pageHeight = 297; // A4 height (mm)
                     const imgHeight = canvas.height * imgWidth / canvas.width;
                     let heightLeft = imgHeight;
                     let position = 0;
@@ -682,8 +696,22 @@
                     console.error("PDF生成中にエラーが発生しました:", error);
                     alert("PDFの生成に失敗しました。ブラウザの拡大率やコンテンツの量をご確認ください。");
                 } finally {
-                    tempHeader.remove();
-                    document.body.style.overflow = '';
+                    // Clean up: remove the temporary header and restore original displays
+                    const currentPdfHeader = document.querySelector('.pdf-header');
+                    if (currentPdfHeader) {
+                        currentPdfHeader.remove();
+                    }
+                    // Restore original display styles for UI elements
+                    const controls = document.querySelector('.controls');
+                    const scoreArea = document.querySelector('.score-area');
+                    controls.style.display = originalControlsDisplay;
+                    scoreArea.style.display = originalScoreAreaDisplay;
+                    downloadPdfButton.style.display = 'block'; // Show the button again
+                    // Remove the temporarily added combined content
+                    const combinedContent = document.querySelector('.container > div:last-child');
+                    if (combinedContent && combinedContent.contains(marksheetArea.cloneNode(true))) { // Check if it's the temporary combined content
+                        combinedContent.remove();
+                    }
                 }
             }
 
