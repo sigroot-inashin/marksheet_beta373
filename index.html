@@ -9,9 +9,9 @@
     <style>
         :root {
             /* デフォルトのテーマカラー */
-            --primary-color: #A7FFEB; /* ミント */
-            --primary-color-rgb: 167, 255, 235;
-            --secondary-color: #64DD17; /* アクセントカラー（例として） */
+            --primary-color: #4CAF50; /* 緑 */
+            --primary-color-rgb: 76, 175, 80;
+            --secondary-color: #388E3C; /* アクセントカラー（例として） */
             --text-color: #333;
             --border-color: #ccc;
             --background-color: #f4f4f4;
@@ -117,39 +117,45 @@
             border-radius: 8px;
             padding: 25px;
             box-shadow: inset 0 0 8px rgba(var(--primary-color-rgb), 0.1);
+            
+            /* 1列2問のレイアウト */
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 2列均等幅 */
+            gap: 15px 30px; /* 行と列のギャップ */
         }
 
-        .question {
+        /* 各問題のコンテナ */
+        .question-container {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px 15px;
+            background-color: #ffffff;
             display: flex;
-            align-items: center; /* 垂直方向中央揃え */
-            padding: 10px 0; /* 上下の余白 */
-            border-bottom: 1px dashed var(--border-color); /* 各問題の下線 */
-            margin-bottom: 5px; /* 問題間のスペース */
-            flex-wrap: wrap; /* 小さい画面で要素が折り返すように */
+            flex-direction: column; /* 縦方向に要素を並べる */
+            align-items: flex-start; /* 左寄せ */
+            gap: 8px; /* 内部要素間のスペース */
         }
 
-        .question:last-child {
-            border-bottom: none; /* 最後の問題の下線はなし */
-            margin-bottom: 0;
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 5px;
         }
 
         .question-number {
             font-weight: bold;
             color: var(--primary-color); /* 問題番号の色 */
             font-size: 1.1em;
-            width: 50px; /* 問題番号の固定幅を少し広げる */
             flex-shrink: 0;
-            text-align: right;
-            padding-right: 15px; /* 番号と選択肢の間の余白を広げる */
+            margin-right: 10px;
         }
 
-        .options {
+        .options-standard {
             display: flex;
-            flex-grow: 1; /* 残りのスペースを埋める */
-            justify-content: flex-start; /* 選択肢を左寄せ */
-            align-items: center; /* マークが中央に揃うように */
-            gap: 20px; /* 選択肢間のスペースを広げる */
-            flex-wrap: wrap; /* 小さい画面で選択肢が折り返すように */
+            gap: 12px; /* 選択肢間の間隔 */
+            flex-wrap: wrap;
         }
 
         .option-label {
@@ -170,18 +176,18 @@
         }
 
         .custom-mark {
-            width: 30px; /* マークのサイズを調整 */
-            height: 30px;
+            width: 28px; /* マークのサイズを調整 */
+            height: 28px;
             border: 2px solid var(--primary-color); /* マークの枠線 */
             border-radius: 50%; /* 円形 */
             display: flex;
             justify-content: center;
             align-items: center;
-            margin-left: 8px; /* 数字とマークの間のスペース */
+            margin-left: 5px; /* 数字/文字とマークの間のスペース */
             transition: background-color 0.2s ease, border-color 0.2s ease;
             font-weight: bold;
             color: var(--primary-color); /* マーク内の数字/文字の色 */
-            font-size: 1em; /* 文字サイズ調整 */
+            font-size: 0.9em; /* 文字サイズ調整 */
         }
 
         /* 選択されたマークのスタイル */
@@ -191,32 +197,44 @@
             border-color: var(--primary-color);
         }
 
-        /* 採点ボタンのスタイル */
-        .correct-button {
-            background-color: #66BB6A; /* 緑 */
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-left: auto; /* 右端に寄せる */
-            font-size: 0.85rem;
-            transition: background-color 0.2s ease, transform 0.1s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            white-space: nowrap; /* ボタン内のテキストが改行されないように */
+        /* 正誤マークの特定のスタイル */
+        .correctness-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 5px; /* 標準選択肢との間隔 */
+            padding-top: 5px;
+            border-top: 1px dashed var(--border-color); /* 上部に点線 */
+            width: 100%; /* 親要素の幅に合わせる */
         }
 
-        .correct-button:hover {
-            background-color: #4CAF50;
-            transform: translateY(-1px);
+        .correctness-section span {
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-right: 5px;
+            flex-shrink: 0; /* 縮小させない */
         }
 
-        .correct-button.incorrect {
-            background-color: #EF5350; /* 赤 */
+        .correctness-options {
+            display: flex;
+            gap: 12px;
         }
-        .correct-button.incorrect:hover {
-            background-color: #F44336;
+
+        .custom-mark.correctness-mark {
+            border-radius: 4px; /* 四角いマーク */
+            width: 35px; /* 少し幅広 */
+            height: 28px;
+            font-size: 0.9em;
         }
+        .option-input[value="正"]:checked + .custom-mark {
+            background-color: #4CAF50; /* 緑 */
+            border-color: #4CAF50;
+        }
+        .option-input[value="誤"]:checked + .custom-mark {
+            background-color: #F44336; /* 赤 */
+            border-color: #F44336;
+        }
+
 
         .score-area {
             text-align: right;
@@ -237,12 +255,6 @@
         /* --- テーマカラーの定義 --- */
         /* 各カラーにRGB値をカスタムプロパティとして追加し、rgba() で使用できるようにする */
 
-        /* ミント */
-        .theme-mint {
-            --primary-color: #A7FFEB; --primary-color-rgb: 167, 255, 235;
-            --secondary-color: #64DD17;
-            --marksheet-bg-color: #EEFFFA;
-        }
         /* 緑 */
         .theme-green {
             --primary-color: #4CAF50; --primary-color-rgb: 76, 175, 80;
@@ -356,7 +368,6 @@
             <div class="input-group">
                 <label for="theme-color">テーマカラー:</label>
                 <select id="theme-color">
-                    <option value="mint">ミント</option>
                     <option value="green">緑</option>
                     <option value="lime-green">黄緑</option>
                     <option value="yellow">黄色</option>
@@ -399,9 +410,13 @@
             const dateInput = document.getElementById('date');
             const downloadPdfButton = document.getElementById('download-pdf-button');
 
-            let correctAnswers = {}; // 各問題の正誤状態を管理するオブジェクト
+            // 各問題の正誤マークの状態を管理するオブジェクト
+            // キーはquestionId, 値は'正'または'誤'、または未選択
+            let correctnessSelection = {}; 
 
             // 初期テーマカラーの適用
+            // ミントを削除したので、デフォルトは緑に設定
+            themeColorSelect.value = 'green'; 
             applyThemeColor(themeColorSelect.value);
 
             // テーマカラー変更イベントリスナー
@@ -421,67 +436,95 @@
                 const questionCount = parseInt(questionCountSelect.value);
                 const markType = markTypeSelect.value;
                 marksheetArea.innerHTML = ''; // 既存のマークシートをクリア
-                correctAnswers = {}; // 正誤状態をリセット
+                correctnessSelection = {}; // 正誤状態をリセット
                 updateTotalScore(); // スコアをリセット
 
                 const options = markType === 'numeric' ? ['1', '2', '3', '4', '5'] : ['A', 'B', 'C', 'D', 'E'];
 
                 for (let i = 1; i <= questionCount; i++) {
-                    const questionDiv = document.createElement('div');
-                    questionDiv.classList.add('question');
+                    const questionContainerDiv = document.createElement('div');
+                    questionContainerDiv.classList.add('question-container');
+
+                    const questionHeaderDiv = document.createElement('div');
+                    questionHeaderDiv.classList.add('question-header');
 
                     const questionNumberSpan = document.createElement('span');
                     questionNumberSpan.classList.add('question-number');
                     questionNumberSpan.textContent = i + '.';
-                    questionDiv.appendChild(questionNumberSpan);
-
-                    const optionsDiv = document.createElement('div');
-                    optionsDiv.classList.add('options');
-
+                    questionHeaderDiv.appendChild(questionNumberSpan);
+                    
+                    // 標準の選択肢（1-5またはA-E）
+                    const optionsStandardDiv = document.createElement('div');
+                    optionsStandardDiv.classList.add('options-standard');
                     options.forEach(option => {
                         const label = document.createElement('label');
                         label.classList.add('option-label');
 
                         const radio = document.createElement('input');
                         radio.type = 'radio';
-                        radio.name = `q${i}`; // 各問題に固有のname属性
+                        radio.name = `q${i}_answer`; // 各問題の回答用name属性
                         radio.value = option;
-                        radio.classList.add('option-input'); // カスタムマーク用
+                        radio.classList.add('option-input');
                         label.appendChild(radio);
 
                         const customMark = document.createElement('span');
                         customMark.classList.add('custom-mark');
-                        customMark.textContent = option; // マークの中に選択肢を表示
+                        customMark.textContent = option;
                         label.appendChild(customMark);
 
-                        optionsDiv.appendChild(label);
+                        optionsStandardDiv.appendChild(label);
                     });
+                    questionHeaderDiv.appendChild(optionsStandardDiv); // questionHeaderDivに標準選択肢を追加
+                    questionContainerDiv.appendChild(questionHeaderDiv);
 
-                    const correctButton = document.createElement('button');
-                    correctButton.classList.add('correct-button');
-                    correctButton.textContent = '正解';
-                    correctButton.dataset.questionId = i; // どの問題のボタンか識別
-                    correctAnswers[i] = false; // 初期状態は不正解（0点）
 
-                    correctButton.addEventListener('click', (event) => {
-                        const qId = event.target.dataset.questionId;
-                        correctAnswers[qId] = !correctAnswers[qId]; // 正誤をトグル
-                        event.target.classList.toggle('incorrect', !correctAnswers[qId]); // クラスをトグル
-                        event.target.textContent = correctAnswers[qId] ? '正解' : '不正解';
-                        updateTotalScore();
+                    // 正誤の選択肢（正・誤）
+                    const correctnessSectionDiv = document.createElement('div');
+                    correctnessSectionDiv.classList.add('correctness-section');
+                    
+                    const correctnessLabelSpan = document.createElement('span');
+                    correctnessLabelSpan.textContent = '採点:';
+                    correctnessSectionDiv.appendChild(correctnessLabelSpan);
+
+                    const correctnessOptionsDiv = document.createElement('div');
+                    correctnessOptionsDiv.classList.add('correctness-options');
+
+                    ['正', '誤'].forEach(type => {
+                        const label = document.createElement('label');
+                        label.classList.add('option-label');
+
+                        const radio = document.createElement('input');
+                        radio.type = 'radio';
+                        radio.name = `q${i}_correctness`; // 各問題の正誤判定用name属性
+                        radio.value = type;
+                        radio.classList.add('option-input');
+                        // 正誤マークが選択されたらスコアを更新
+                        radio.addEventListener('change', () => {
+                            correctnessSelection[i] = radio.value;
+                            updateTotalScore();
+                        });
+                        label.appendChild(radio);
+
+                        const customMark = document.createElement('span');
+                        customMark.classList.add('custom-mark', 'correctness-mark'); // 四角いマーク用クラス
+                        customMark.textContent = type;
+                        label.appendChild(customMark);
+
+                        correctnessOptionsDiv.appendChild(label);
                     });
-
-                    questionDiv.appendChild(optionsDiv);
-                    questionDiv.appendChild(correctButton);
-                    marksheetArea.appendChild(questionDiv);
+                    correctnessSectionDiv.appendChild(correctnessOptionsDiv);
+                    
+                    questionContainerDiv.appendChild(correctnessSectionDiv); // questionContainerDivに正誤セクションを追加
+                    marksheetArea.appendChild(questionContainerDiv);
                 }
             }
 
             // 合計点を更新する関数
             function updateTotalScore() {
                 let score = 0;
-                for (const qId in correctAnswers) {
-                    if (correctAnswers[qId]) {
+                // correctnessSelectionオブジェクトを反復処理し、'正'が選択されている数を数える
+                for (const qId in correctnessSelection) {
+                    if (correctnessSelection[qId] === '正') {
                         score++;
                     }
                 }
@@ -509,13 +552,17 @@
                 tempHeader.style.textAlign = 'center';
                 tempHeader.style.backgroundColor = 'white'; // PDF内のヘッダー背景色
                 tempHeader.style.borderRadius = '8px';
+                // HTML要素からCSS変数を取得して適用
+                const primaryColor = getComputedStyle(document.body).getPropertyValue('--primary-color');
+                const primaryColorRgb = getComputedStyle(document.body).getPropertyValue('--primary-color-rgb');
+                
                 tempHeader.innerHTML = `
-                    <h1 style="color: var(--primary-color); font-size: 2em; margin-bottom: 10px;">採点済みマークシート</h1>
+                    <h1 style="color: ${primaryColor}; font-size: 2em; margin-bottom: 10px;">採点済みマークシート</h1>
                     <p style="text-align: right; margin-right: 50px; margin-bottom: 5px; font-size: 1.1em;"><strong>氏名:</strong> ${studentName}</p>
                     <p style="text-align: right; margin-right: 50px; margin-bottom: 5px; font-size: 1.1em;"><strong>科目:</strong> ${subjectName}</p>
                     <p style="text-align: right; margin-right: 50px; margin-bottom: 15px; font-size: 1.1em;"><strong>実施日:</strong> ${implementationDate}</p>
-                    <p style="text-align: right; margin-right: 50px; font-size: 1.8em; font-weight: bold; color: var(--primary-color);">合計点: ${totalScore} 点</p>
-                    <hr style="border: 0; border-top: 2px solid var(--primary-color); margin: 20px 50px;">
+                    <p style="text-align: right; margin-right: 50px; font-size: 1.8em; font-weight: bold; color: ${primaryColor};">合計点: ${totalScore} 点</p>
+                    <hr style="border: 0; border-top: 2px solid ${primaryColor}; margin: 20px 50px;">
                 `;
 
                 marksheetArea.before(tempHeader);
