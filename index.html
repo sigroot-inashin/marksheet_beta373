@@ -138,7 +138,7 @@
 
         .question-header {
             display: flex;
-            justify-content: space-between;
+            /* justify-content: space-between; */ /* 削除または変更 */
             align-items: center;
             width: 100%;
             margin-bottom: 5px;
@@ -156,6 +156,9 @@
             display: flex;
             gap: 12px; /* 選択肢間の間隔 */
             flex-wrap: wrap;
+            /* 問題番号の隣から下の行に移動させるための変更 */
+            width: 100%; /* 親要素の幅いっぱいに広げる */
+            margin-top: 5px; /* 問題番号との間に少しスペースを空ける */
         }
 
         .option-label {
@@ -415,7 +418,6 @@
             let correctnessSelection = {}; 
 
             // 初期テーマカラーの適用
-            // ミントを削除したので、デフォルトは緑に設定
             themeColorSelect.value = 'green'; 
             applyThemeColor(themeColorSelect.value);
 
@@ -445,13 +447,18 @@
                     const questionContainerDiv = document.createElement('div');
                     questionContainerDiv.classList.add('question-container');
 
-                    const questionHeaderDiv = document.createElement('div');
-                    questionHeaderDiv.classList.add('question-header');
+                    // 問題番号と標準選択肢のコンテナ
+                    const questionContentDiv = document.createElement('div');
+                    questionContentDiv.style.display = 'flex';
+                    questionContentDiv.style.flexDirection = 'column'; // 縦方向に並べる
+                    questionContentDiv.style.alignItems = 'flex-start'; // 左寄せ
+                    questionContentDiv.style.width = '100%';
+
 
                     const questionNumberSpan = document.createElement('span');
                     questionNumberSpan.classList.add('question-number');
                     questionNumberSpan.textContent = i + '.';
-                    questionHeaderDiv.appendChild(questionNumberSpan);
+                    questionContentDiv.appendChild(questionNumberSpan);
                     
                     // 標準の選択肢（1-5またはA-E）
                     const optionsStandardDiv = document.createElement('div');
@@ -474,8 +481,8 @@
 
                         optionsStandardDiv.appendChild(label);
                     });
-                    questionHeaderDiv.appendChild(optionsStandardDiv); // questionHeaderDivに標準選択肢を追加
-                    questionContainerDiv.appendChild(questionHeaderDiv);
+                    questionContentDiv.appendChild(optionsStandardDiv); // questionContentDivに標準選択肢を追加
+                    questionContainerDiv.appendChild(questionContentDiv); // questionContainerDivにquestionContentDivを追加
 
 
                     // 正誤の選択肢（正・誤）
