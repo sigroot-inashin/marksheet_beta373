@@ -117,7 +117,7 @@
             border-radius: 8px;
             padding: 25px;
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); /* レスポンシブなカラム */
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* カラム幅を調整 */
             gap: 20px 15px; /* 行間と列間 */
             box-shadow: inset 0 0 8px rgba(var(--primary-color-rgb), 0.1);
         }
@@ -126,7 +126,7 @@
             display: flex;
             align-items: center; /* 垂直方向中央揃え */
             gap: 10px;
-            padding: 8px 0;
+            padding: 10px 0; /* 上下の余白を調整 */
             border-bottom: 1px dashed var(--border-color); /* 各問題の下線 */
         }
 
@@ -141,6 +141,7 @@
             width: 40px; /* 問題番号の固定幅 */
             flex-shrink: 0;
             text-align: right;
+            padding-right: 5px; /* 番号と選択肢の間の余白 */
         }
 
         .options {
@@ -148,6 +149,7 @@
             gap: 8px; /* 選択肢間のスペース */
             flex-grow: 1; /* 残りのスペースを埋める */
             justify-content: space-around; /* 選択肢を均等に配置 */
+            align-items: center; /* マークが中央に揃うように */
         }
 
         .option-label {
@@ -168,8 +170,8 @@
         }
 
         .custom-mark {
-            width: 24px; /* マークのサイズ */
-            height: 24px;
+            width: 28px; /* マークのサイズを少し大きく */
+            height: 28px;
             border: 2px solid var(--primary-color); /* マークの枠線 */
             border-radius: 50%; /* 円形 */
             display: flex;
@@ -179,7 +181,7 @@
             transition: background-color 0.2s ease, border-color 0.2s ease;
             font-weight: bold;
             color: var(--primary-color); /* マーク内の数字/文字の色 */
-            font-size: 0.85em;
+            font-size: 0.9em; /* 文字サイズ調整 */
         }
 
         /* 選択されたマークのスタイル */
@@ -234,7 +236,7 @@
         /* --- テーマカラーの定義 --- */
         /* 各カラーにRGB値をカスタムプロパティとして追加し、rgba() で使用できるようにする */
 
-        /* ミント (デフォルト) */
+        /* ミント */
         .theme-mint {
             --primary-color: #A7FFEB; --primary-color-rgb: 167, 255, 235;
             --secondary-color: #64DD17;
@@ -279,8 +281,38 @@
         /* スカイブルー */
         .theme-sky-blue {
             --primary-color: #87CEEB; --primary-color-rgb: 135, 206, 235;
-            --secondary-color: #4CAF50; /* 緑に近い色 */
+            --secondary-color: #4CAF50;
             --marksheet-bg-color: #EAF9FF;
+        }
+        /* 新色: 青緑 (Teal) */
+        .theme-teal {
+            --primary-color: #008080; --primary-color-rgb: 0, 128, 128;
+            --secondary-color: #006666;
+            --marksheet-bg-color: #E0FFFF; /* 淡いシアン */
+        }
+        /* 新色: クリスタル (Crystal) - 明るい水色/白に近いイメージ */
+        .theme-crystal {
+            --primary-color: #ADD8E6; --primary-color-rgb: 173, 216, 230; /* ライトブルー */
+            --secondary-color: #87CEEB; /* スカイブルー */
+            --marksheet-bg-color: #F0F8FF; /* アリスブルー */
+        }
+        /* 新色: 金 (Gold) */
+        .theme-gold {
+            --primary-color: #FFD700; --primary-color-rgb: 255, 215, 0;
+            --secondary-color: #DAA520; /* ゴールデンロッド */
+            --marksheet-bg-color: #FFFACD; /* レモンシフォン */
+        }
+        /* 新色: 銀 (Silver) */
+        .theme-silver {
+            --primary-color: #C0C0C0; --primary-color-rgb: 192, 192, 192;
+            --secondary-color: #A9A9A9; /* ダークグレー */
+            --marksheet-bg-color: #F5F5F5; /* ホワイトスモーク */
+        }
+        /* 新色: 銅 (Copper) */
+        .theme-copper {
+            --primary-color: #B87333; --primary-color-rgb: 184, 115, 51;
+            --secondary-color: #A52A2A; /* ブラウン */
+            --marksheet-bg-color: #F7E7DC; /* 淡いクリーム色 */
         }
     </style>
 </head>
@@ -331,6 +363,11 @@
                     <option value="pink">ピンク</option>
                     <option value="cobalt-blue">コバルトブルー</option>
                     <option value="sky-blue">スカイブルー</option>
+                    <option value="teal">青緑</option>
+                    <option value="crystal">クリスタル</option>
+                    <option value="gold">金</option>
+                    <option value="silver">銀</option>
+                    <option value="copper">銅</option>
                 </select>
             </div>
 
