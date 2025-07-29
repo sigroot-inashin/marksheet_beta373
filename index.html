@@ -14,10 +14,11 @@
             --text-color: #333;
             --border-color: #ccc;
             --background-color: #f4f4f4;
+            --marksheet-bg-color: #ffffff; /* マークシートの背景色 */
         }
 
         body {
-            font-family: sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 20px;
             background-color: var(--background-color);
@@ -32,180 +33,257 @@
             background-color: #fff;
             padding: 30px;
             border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             width: 100%;
             max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
         }
 
         h1, h2 {
             text-align: center;
             color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 2.2em;
         }
 
         .controls {
             display: flex;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 20px;
             margin-bottom: 20px;
-            padding: 15px;
+            padding: 20px;
             border: 1px solid var(--border-color);
-            border-radius: 5px;
+            border-radius: 8px;
             background-color: #f9f9f9;
+            align-items: flex-end; /* ボタンを下揃え */
         }
 
         .input-group {
             display: flex;
             flex-direction: column;
             flex: 1 1 auto; /* フレックスアイテムとして伸縮 */
-            min-width: 150px; /* 最小幅 */
+            min-width: 160px; /* 最小幅 */
         }
 
         .input-group label {
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             font-weight: bold;
             color: var(--text-color);
+            font-size: 0.95em;
         }
 
         .input-group input[type="text"],
         .input-group select {
-            padding: 8px;
+            padding: 10px 12px;
             border: 1px solid var(--border-color);
-            border-radius: 4px;
+            border-radius: 5px;
             font-size: 1rem;
+            background-color: #ffffff;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .input-group input[type="text"]:focus,
+        .input-group select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.2);
+            outline: none;
         }
 
         button#generate-button, button#download-pdf-button {
             background-color: var(--primary-color);
             color: white;
-            padding: 10px 20px;
+            padding: 12px 25px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             font-size: 1rem;
-            align-self: flex-end; /* 下揃え */
-            transition: background-color 0.3s ease;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease;
         }
 
         button#generate-button:hover, button#download-pdf-button:hover {
-            background-color: var(--secondary-color); /* ホバー時の色 */
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
         }
 
+        /* ----- マークシートエリアのスタイル (スキャネット形式) ----- */
         .marksheet-area {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* レスポンシブなカラム */
-            gap: 15px;
-            margin-top: 20px;
-            padding: 20px;
-            border: 1px solid var(--border-color);
+            background-color: var(--marksheet-bg-color);
+            border: 2px solid var(--primary-color); /* マークシート全体の枠線 */
             border-radius: 8px;
-            background-color: #fdfdfd;
+            padding: 25px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); /* レスポンシブなカラム */
+            gap: 20px 15px; /* 行間と列間 */
+            box-shadow: inset 0 0 8px rgba(var(--primary-color-rgb), 0.1);
         }
 
         .question {
             display: flex;
-            flex-direction: column;
-            padding: 10px;
-            border: 1px solid #eee;
-            border-radius: 5px;
-            background-color: #fff;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            align-items: center; /* 垂直方向中央揃え */
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--border-color); /* 各問題の下線 */
         }
 
-        .question p {
-            margin: 0 0 10px 0;
+        .question:last-child {
+            border-bottom: none; /* 最後の問題の下線はなし */
+        }
+
+        .question-number {
             font-weight: bold;
-            color: var(--text-color);
+            color: var(--primary-color); /* 問題番号の色 */
+            font-size: 1.1em;
+            width: 40px; /* 問題番号の固定幅 */
+            flex-shrink: 0;
+            text-align: right;
         }
 
-        .options label {
-            display: inline-block;
-            margin-right: 15px;
+        .options {
+            display: flex;
+            gap: 8px; /* 選択肢間のスペース */
+            flex-grow: 1; /* 残りのスペースを埋める */
+            justify-content: space-around; /* 選択肢を均等に配置 */
+        }
+
+        .option-label {
+            display: inline-flex; /* ラベルとマークが揃うように */
+            align-items: center;
             cursor: pointer;
-            font-size: 0.95rem;
+            font-size: 0.9em;
+            color: var(--text-color);
+            position: relative; /* カスタムマークの位置指定用 */
         }
 
-        .options input[type="radio"] {
-            margin-right: 5px;
-            accent-color: var(--primary-color); /* ラジオボタンの色 */
+        .option-input {
+            /* 実際のラジオボタンを隠す */
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
         }
 
+        .custom-mark {
+            width: 24px; /* マークのサイズ */
+            height: 24px;
+            border: 2px solid var(--primary-color); /* マークの枠線 */
+            border-radius: 50%; /* 円形 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-left: 5px; /* 数字とマークの間のスペース */
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            font-weight: bold;
+            color: var(--primary-color); /* マーク内の数字/文字の色 */
+            font-size: 0.85em;
+        }
+
+        /* 選択されたマークのスタイル */
+        .option-input:checked + .custom-mark {
+            background-color: var(--primary-color); /* 選択時の塗りつぶし色 */
+            color: white; /* 選択時の文字色 */
+            border-color: var(--primary-color);
+        }
+
+        /* 採点ボタンのスタイル */
         .correct-button {
-            background-color: #4CAF50; /* 緑 */
+            background-color: #66BB6A; /* 緑 */
             color: white;
             border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
+            padding: 6px 12px;
+            border-radius: 5px;
             cursor: pointer;
-            margin-top: 10px;
+            margin-left: auto; /* 右端に寄せる */
             font-size: 0.85rem;
-            transition: background-color 0.2s ease;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .correct-button:hover {
+            background-color: #4CAF50;
+            transform: translateY(-1px);
         }
 
         .correct-button.incorrect {
-            background-color: #f44336; /* 赤 */
+            background-color: #EF5350; /* 赤 */
+        }
+        .correct-button.incorrect:hover {
+            background-color: #F44336;
         }
 
         .score-area {
             text-align: right;
-            margin-top: 30px;
+            margin-top: 20px;
             padding-top: 20px;
             border-top: 2px solid var(--primary-color);
-            display: flex; /* PDFボタンを並べるためにflexboxを使用 */
-            justify-content: space-between; /* 要素を左右に配置 */
-            align-items: center; /* 垂直方向中央揃え */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .score-area h2 {
             color: var(--primary-color);
             font-size: 1.8rem;
-            margin: 0; /* h2のデフォルトマージンをリセット */
+            margin: 0;
         }
 
-        /* テーマカラーの定義 */
+        /* --- テーマカラーの定義 --- */
+        /* 各カラーにRGB値をカスタムプロパティとして追加し、rgba() で使用できるようにする */
+
         /* ミント (デフォルト) */
         .theme-mint {
-            --primary-color: #A7FFEB;
+            --primary-color: #A7FFEB; --primary-color-rgb: 167, 255, 235;
             --secondary-color: #64DD17;
+            --marksheet-bg-color: #EEFFFA;
         }
         /* ミントグリーン */
         .theme-mint-green {
-            --primary-color: #C8E6C9;
+            --primary-color: #C8E6C9; --primary-color-rgb: 200, 230, 201;
             --secondary-color: #81C784;
+            --marksheet-bg-color: #F1F8F1;
         }
         /* 黄緑 */
         .theme-lime-green {
-            --primary-color: #CDDC39;
+            --primary-color: #CDDC39; --primary-color-rgb: 205, 220, 57;
             --secondary-color: #AFB42B;
+            --marksheet-bg-color: #FCFDE7;
         }
         /* ピンク */
         .theme-pink {
-            --primary-color: #FFCDD2;
+            --primary-color: #FFCDD2; --primary-color-rgb: 255, 205, 210;
             --secondary-color: #E91E63;
+            --marksheet-bg-color: #FFF0F2;
         }
         /* 赤 */
         .theme-red {
-            --primary-color: #FFEBEE;
+            --primary-color: #FFEBEE; --primary-color-rgb: 255, 235, 238;
             --secondary-color: #F44336;
+            --marksheet-bg-color: #FFF8F9;
         }
         /* 紫 */
         .theme-purple {
-            --primary-color: #E1BEE7;
+            --primary-color: #E1BEE7; --primary-color-rgb: 225, 190, 231;
             --secondary-color: #9C27B0;
+            --marksheet-bg-color: #F9F0FA;
         }
         /* 青 */
         .theme-blue {
-            --primary-color: #BBDEFB;
+            --primary-color: #BBDEFB; --primary-color-rgb: 187, 222, 251;
             --secondary-color: #2196F3;
+            --marksheet-bg-color: #F0F7FF;
         }
         /* 水色 */
         .theme-sky-blue {
-            --primary-color: #B2EBF2;
+            --primary-color: #B2EBF2; --primary-color-rgb: 178, 235, 242;
             --secondary-color: #00BCD4;
+            --marksheet-bg-color: #EFFCFF;
         }
         /* 黄色 */
         .theme-yellow {
-            --primary-color: #FFF9C4;
+            --primary-color: #FFF9C4; --primary-color-rgb: 255, 249, 196;
             --secondary-color: #FFEB3B;
+            --marksheet-bg-color: #FFFFF0;
         }
     </style>
 </head>
@@ -259,10 +337,8 @@
             <button id="generate-button">マークシート生成</button>
         </div>
 
-        <div id="pdf-content-area">
-            <div id="marksheet-area" class="marksheet-area">
-                </div>
-        </div>
+        <div id="marksheet-area" class="marksheet-area">
+            </div>
 
         <div class="score-area">
             <h2>合計点: <span id="total-score">0</span> 点</h2>
@@ -284,7 +360,6 @@
             const nameInput = document.getElementById('name');
             const subjectInput = document.getElementById('subject');
             const downloadPdfButton = document.getElementById('download-pdf-button'); // PDFダウンロードボタン
-            const pdfContentArea = document.getElementById('pdf-content-area'); // PDF化するコンテンツエリア
 
             let correctAnswers = {}; // 各問題の正誤状態を管理するオブジェクト
 
@@ -311,24 +386,36 @@
                 correctAnswers = {}; // 正誤状態をリセット
                 updateTotalScore(); // スコアをリセット
 
+                const options = markType === 'numeric' ? ['1', '2', '3', '4', '5'] : ['A', 'B', 'C', 'D', 'E'];
+
                 for (let i = 1; i <= questionCount; i++) {
                     const questionDiv = document.createElement('div');
                     questionDiv.classList.add('question');
-                    questionDiv.innerHTML = `<p>問 ${i}</p>`;
+
+                    const questionNumberSpan = document.createElement('span');
+                    questionNumberSpan.classList.add('question-number');
+                    questionNumberSpan.textContent = i + '.'; // 例: 1. 2.
+                    questionDiv.appendChild(questionNumberSpan);
 
                     const optionsDiv = document.createElement('div');
                     optionsDiv.classList.add('options');
 
-                    const options = markType === 'numeric' ? ['1', '2', '3', '4', '5'] : ['A', 'B', 'C', 'D', 'E'];
-
                     options.forEach(option => {
                         const label = document.createElement('label');
+                        label.classList.add('option-label');
+
                         const radio = document.createElement('input');
                         radio.type = 'radio';
                         radio.name = `q${i}`; // 各問題に固有のname属性
                         radio.value = option;
+                        radio.classList.add('option-input'); // カスタムマーク用
                         label.appendChild(radio);
-                        label.appendChild(document.createTextNode(option));
+
+                        const customMark = document.createElement('span');
+                        customMark.classList.add('custom-mark');
+                        customMark.textContent = option; // マークの中に選択肢を表示
+                        label.appendChild(customMark);
+
                         optionsDiv.appendChild(label);
                     });
 
@@ -373,38 +460,47 @@
 
             // PDFとしてマークシートをダウンロードする関数
             async function downloadMarksheetAsPdf() {
-                // PDFに含める要素を選択
                 const element = document.querySelector('.container'); // コンテナ全体をPDF化
 
-                // 氏名と科目名を取得
                 const studentName = nameInput.value || "名無し";
                 const subjectName = subjectInput.value || "不明な科目";
                 const totalScore = totalScoreSpan.textContent;
 
                 // PDF生成時の一時的なHTMLを追加（PDFに氏名・科目・合計点を表示するため）
                 const tempHeader = document.createElement('div');
-                tempHeader.style.paddingBottom = '20px'; // スペース調整
+                tempHeader.style.padding = '20px 0';
+                tempHeader.style.textAlign = 'center';
+                tempHeader.style.backgroundColor = 'white'; // PDF内のヘッダー背景色
+                tempHeader.style.borderRadius = '8px';
                 tempHeader.innerHTML = `
-                    <h1 style="text-align: center; color: #333;">採点済みマークシート</h1>
-                    <p style="text-align: right; margin-bottom: 5px; font-size: 1.1em;"><strong>氏名:</strong> ${studentName}</p>
-                    <p style="text-align: right; margin-bottom: 5px; font-size: 1.1em;"><strong>科目:</strong> ${subjectName}</p>
-                    <p style="text-align: right; font-size: 1.5em; font-weight: bold; color: #007BFF;">合計点: ${totalScore} 点</p>
-                    <hr style="border: 0; border-top: 1px dashed #ccc; margin: 20px 0;">
+                    <h1 style="color: var(--primary-color); font-size: 2em; margin-bottom: 10px;">採点済みマークシート</h1>
+                    <p style="text-align: right; margin-right: 50px; margin-bottom: 5px; font-size: 1.1em;"><strong>氏名:</strong> ${studentName}</p>
+                    <p style="text-align: right; margin-right: 50px; margin-bottom: 15px; font-size: 1.1em;"><strong>科目:</strong> ${subjectName}</p>
+                    <p style="text-align: right; margin-right: 50px; font-size: 1.8em; font-weight: bold; color: var(--primary-color);">合計点: ${totalScore} 点</p>
+                    <hr style="border: 0; border-top: 2px solid var(--primary-color); margin: 20px 50px;">
                 `;
 
                 // 一時的にマークシートエリアの前にヘッダーを追加
                 marksheetArea.before(tempHeader);
 
                 try {
+                    // スクロールバーが表示されないように、一時的にoverflowをhiddenにする
+                    document.body.style.overflow = 'hidden';
+
+                    // HTMLコンテンツをキャプチャ
                     const canvas = await html2canvas(element, {
                         scale: 2, // 解像度を上げる
-                        useCORS: true, // 画像などを利用する場合にCORSを有効にする
-                        windowWidth: element.scrollWidth, // コンテンツの幅に合わせてキャプチャ
-                        windowHeight: element.scrollHeight // コンテンツの高さに合わせてキャプチャ
+                        useCORS: true,
+                        // PDF化する際に不要な要素を無視 (例: 生成・PDFボタン)
+                        ignoreElements: (node) => {
+                            return node.id === 'generate-button' || node.id === 'download-pdf-button' || node.classList.contains('controls');
+                        },
+                        // 背景色を透過にしない (白い背景を確実に描画)
+                        backgroundColor: null, // null にすると CSS の背景が適用される
                     });
 
                     const imgData = canvas.toDataURL('image/png');
-                    const pdf = new jsPDF('p', 'mm', 'a4'); // 'p' for portrait, 'mm' for units, 'a4' for size
+                    const pdf = new jsPDF('p', 'mm', 'a4');
 
                     const imgWidth = 210; // A4幅（mm）
                     const pageHeight = 297; // A4高さ（mm）
@@ -412,18 +508,16 @@
                     let heightLeft = imgHeight;
                     let position = 0;
 
-                    // ページを追加して画像を配置
                     pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
                     heightLeft -= pageHeight;
 
-                    while (heightLeft >= 0) {
+                    while (heightLeft >= -1) { // わずかな残りを考慮して-1
                         position = heightLeft - imgHeight;
                         pdf.addPage();
                         pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
                         heightLeft -= pageHeight;
                     }
 
-                    // ダウンロード時のファイル名
                     const filename = `${studentName}_${subjectName}_マークシート_${totalScore}点.pdf`;
                     pdf.save(filename);
 
@@ -431,8 +525,9 @@
                     console.error("PDF生成中にエラーが発生しました:", error);
                     alert("PDFの生成に失敗しました。ブラウザの拡大率やコンテンツの量をご確認ください。");
                 } finally {
-                    // 処理が終わったら一時的なヘッダーを削除
+                    // 処理が終わったら一時的なヘッダーを削除し、overflowを元に戻す
                     tempHeader.remove();
+                    document.body.style.overflow = '';
                 }
             }
 
