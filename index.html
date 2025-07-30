@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web マークシート</title>
+    <title>マークシート</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
@@ -372,11 +372,11 @@
         <div class="controls">
             <div class="input-group">
                 <label for="name">氏名:</label>
-                <input type="text" id="name" placeholder="氏名を入力してください">
+                <input type="text" id="name" placeholder="氏名登録">
             </div>
             <div class="input-group">
                 <label for="subject">科目:</label>
-                <input type="text" id="subject" placeholder="科目名を入力してください">
+                <input type="text" id="subject" placeholder="科目登録">
             </div>
             <div class="input-group">
                 <label for="date">実施日:</label>
@@ -429,7 +429,7 @@
 
         <div class="score-area">
             <h2>合計点: <span id="total-score">0</span> 点</h2>
-            <button id="download-pdf-button">PDFでダウンロード</button>
+            <button id="download-pdf-button">結果個票ダウンロード</button>
         </div>
     </div>
 
@@ -593,7 +593,7 @@
 
                 // PDF出力用コンテナにコンテンツを生成
                 pdfExportArea.innerHTML = `
-                    <h1 style="color: var(--primary-color); text-align: center; font-size: 2em; margin-bottom: 20px;">採点済みマークシート 個票</h1>
+                    <h1 style="color: var(--primary-color); text-align: center; font-size: 2em; margin-bottom: 20px;">結果個票</h1>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
                         <p style="font-size: 1.1em; margin: 0;"><strong>氏名:</strong> ${studentName}</p>
                         <p style="font-size: 1.1em; margin: 0;"><strong>科目:</strong> ${subjectName}</p>
