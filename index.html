@@ -138,7 +138,6 @@
 
         .question-header {
             display: flex;
-            /* justify-content: space-between; */ /* 削除または変更 */
             align-items: center;
             width: 100%;
             margin-bottom: 5px;
@@ -156,7 +155,6 @@
             display: flex;
             gap: 12px; /* 選択肢間の間隔 */
             flex-wrap: wrap;
-            /* 問題番号の隣から下の行に移動させるための変更 */
             width: 100%; /* 親要素の幅いっぱいに広げる */
             margin-top: 5px; /* 問題番号との間に少しスペースを空ける */
         }
@@ -342,6 +340,29 @@
             --secondary-color: #D32F2F; /* ダークレッド */
             --marksheet-bg-color: #FFEBEE; /* 淡い赤 */
         }
+
+        /* PDF出力用の非表示コンテナ */
+        #pdf-export-area {
+            position: absolute;
+            left: -9999px; /* 画面外に配置 */
+            top: -9999px;
+            width: 800px; /* ある程度の幅を設定 */
+            padding: 30px;
+            box-sizing: border-box;
+            background-color: white; /* PDF背景色 */
+        }
+        #pdf-export-area .marksheet-area {
+            box-shadow: none; /* PDFではシャドウを削除 */
+            border: 2px solid var(--primary-color); /* PDF用の枠線を維持 */
+        }
+        #pdf-export-area .score-area {
+            border-top: none; /* PDFではスコアエリアの線は不要 */
+            justify-content: flex-end; /* 右寄せ */
+            padding-top: 0;
+        }
+        #pdf-export-area .score-area h2 {
+            font-size: 1.5rem; /* PDFでのフォントサイズ調整 */
+        }
     </style>
 </head>
 <body>
@@ -395,20 +416,25 @@
                     <option value="gold">金</option>
                     <option value="silver">銀</option>
                     <option value="copper">銅</option>
-                    <option value="orange">オレンジ</option> <option value="red">赤</option>     </select>
+                    <option value="orange">オレンジ</option>
+                    <option value="red">赤</option>
+                </select>
             </div>
 
             <button id="generate-button">マークシート生成</button>
         </div>
 
         <div id="marksheet-area" class="marksheet-area">
-            </div>
+        </div>
 
         <div class="score-area">
             <h2>合計点: <span id="total-score">0</span> 点</h2>
             <button id="download-pdf-button">PDFでダウンロード</button>
         </div>
     </div>
+
+    <div id="pdf-export-area">
+        </div>
 
     <script>
         const { jsPDF } = window.jspdf;
@@ -424,13 +450,14 @@
             const subjectInput = document.getElementById('subject');
             const dateInput = document.getElementById('date');
             const downloadPdfButton = document.getElementById('download-pdf-button');
+            const pdfExportArea = document.getElementById('pdf-export-area');
 
             // 各問題の正誤マークの状態を管理するオブジェクト
             // キーはquestionId, 値は'正'または'誤'、または未選択
-            let correctnessSelection = {}; 
+            let correctnessSelection = {};
 
             // 初期テーマカラーの適用
-            themeColorSelect.value = 'green'; 
+            themeColorSelect.value = 'green';
             applyThemeColor(themeColorSelect.value);
 
             // テーマカラー変更イベントリスナー
@@ -554,50 +581,107 @@
             function applyThemeColor(colorName) {
                 document.body.className = ''; // 既存のテーマクラスを削除
                 document.body.classList.add(`theme-${colorName}`); // 新しいテーマクラスを追加
+                pdfExportArea.className = `theme-${colorName}`; // PDFエクスポートエリアにもテーマを適用
             }
 
             // PDFとしてマークシートをダウンロードする関数
             async function downloadMarksheetAsPdf() {
-                const element = document.querySelector('.container'); // コンテナ全体をPDF化
-
                 const studentName = nameInput.value || "名無し";
                 const subjectName = subjectInput.value || "不明な科目";
                 const implementationDate = dateInput.value || "日付不明";
                 const totalScore = totalScoreSpan.textContent;
 
-                // PDF生成時の一時的なHTMLを追加（PDFに氏名・科目・実施日・合計点を表示するため）
-                const tempHeader = document.createElement('div');
-                tempHeader.style.padding = '20px 0';
-                tempHeader.style.textAlign = 'center';
-                tempHeader.style.backgroundColor = 'white'; // PDF内のヘッダー背景色
-                tempHeader.style.borderRadius = '8px';
-                // HTML要素からCSS変数を取得して適用
-                const primaryColor = getComputedStyle(document.body).getPropertyValue('--primary-color');
-                const primaryColorRgb = getComputedStyle(document.body).getPropertyValue('--primary-color-rgb');
-                
-                tempHeader.innerHTML = `
-                    <h1 style="color: ${primaryColor}; font-size: 2em; margin-bottom: 10px;">採点済みマークシート</h1>
-                    <p style="text-align: right; margin-right: 50px; margin-bottom: 5px; font-size: 1.1em;"><strong>氏名:</strong> ${studentName}</p>
-                    <p style="text-align: right; margin-right: 50px; margin-bottom: 5px; font-size: 1.1em;"><strong>科目:</strong> ${subjectName}</p>
-                    <p style="text-align: right; margin-right: 50px; margin-bottom: 15px; font-size: 1.1em;"><strong>実施日:</strong> ${implementationDate}</p>
-                    <p style="text-align: right; margin-right: 50px; font-size: 1.8em; font-weight: bold; color: ${primaryColor};">合計点: ${totalScore} 点</p>
-                    <hr style="border: 0; border-top: 2px solid ${primaryColor}; margin: 20px 50px;">
+                // PDF出力用コンテナにコンテンツを生成
+                pdfExportArea.innerHTML = `
+                    <h1 style="color: var(--primary-color); text-align: center; font-size: 2em; margin-bottom: 20px;">採点済みマークシート 個票</h1>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                        <p style="font-size: 1.1em; margin: 0;"><strong>氏名:</strong> ${studentName}</p>
+                        <p style="font-size: 1.1em; margin: 0;"><strong>科目:</strong> ${subjectName}</p>
+                        <p style="font-size: 1.1em; margin: 0;"><strong>実施日:</strong> ${implementationDate}</p>
+                    </div>
+                    <div style="text-align: right; margin-bottom: 20px;">
+                        <h2 style="color: var(--primary-color); font-size: 1.8em; margin: 0;">合計点: ${totalScore} 点</h2>
+                    </div>
+                    <div class="marksheet-area-for-pdf">
+                        </div>
                 `;
 
-                marksheetArea.before(tempHeader);
+                // 現在のマークシートの内容をPDF用エリアにコピー
+                const marksheetAreaForPdf = pdfExportArea.querySelector('.marksheet-area-for-pdf');
+                marksheetAreaForPdf.innerHTML = marksheetArea.innerHTML;
+                
+                // PDF用にコピーされたマークシート内のラジオボタンのname属性を調整
+                // これにより、PDF生成時のhtml2canvasが正しく要素を認識できるようになる
+                marksheetAreaForPdf.querySelectorAll('input[type="radio"]').forEach(radio => {
+                    radio.name = 'pdf_' + radio.name; // name属性を一時的に変更
+                });
+
+                // PDF用のマークシートエリアのスタイルを調整
+                const currentPrimaryColor = getComputedStyle(document.body).getPropertyValue('--primary-color');
+                const currentPrimaryColorRgb = getComputedStyle(document.body).getPropertyValue('--primary-color-rgb');
+                const currentMarksheetBgColor = getComputedStyle(document.body).getPropertyValue('--marksheet-bg-color');
+                const currentBorderColor = getComputedStyle(document.body).getPropertyValue('--border-color');
+
+                marksheetAreaForPdf.style.backgroundColor = currentMarksheetBgColor;
+                marksheetAreaForPdf.style.border = `2px solid ${currentPrimaryColor}`;
+                marksheetAreaForPdf.style.borderRadius = '8px';
+                marksheetAreaForPdf.style.padding = '25px';
+                marksheetAreaForPdf.style.display = 'grid';
+                marksheetAreaForPdf.style.gridTemplateColumns = '1fr 1fr';
+                marksheetAreaForPdf.style.gap = '15px 30px';
+                marksheetAreaForPdf.style.boxShadow = `inset 0 0 8px rgba(${currentPrimaryColorRgb}, 0.1)`;
+
+
+                // 個々の質問コンテナのスタイルもPDF用に調整
+                marksheetAreaForPdf.querySelectorAll('.question-container').forEach(qc => {
+                    qc.style.border = `1px solid ${currentBorderColor}`;
+                    qc.style.borderRadius = '6px';
+                    qc.style.padding = '10px 15px';
+                    qc.style.backgroundColor = '#ffffff';
+                    qc.style.display = 'flex';
+                    qc.style.flexDirection = 'column';
+                    qc.style.alignItems = 'flex-start';
+                    qc.style.gap = '8px';
+                });
+
+                // 問題番号のスタイルもPDF用に調整
+                marksheetAreaForPdf.querySelectorAll('.question-number').forEach(qn => {
+                    qn.style.color = currentPrimaryColor;
+                });
+
+                // カスタムマークのスタイルもPDF用に調整
+                marksheetAreaForPdf.querySelectorAll('.custom-mark').forEach(cm => {
+                    cm.style.borderColor = currentPrimaryColor;
+                    cm.style.color = currentPrimaryColor;
+                });
+
+                // 選択されたカスタムマークのスタイルもPDF用に調整
+                marksheetAreaForPdf.querySelectorAll('.option-input:checked + .custom-mark').forEach(cm => {
+                    cm.style.backgroundColor = currentPrimaryColor;
+                    cm.style.color = 'white';
+                    cm.style.borderColor = currentPrimaryColor;
+                });
+
+                // 正誤マークの選択時のスタイルもPDF用に調整 (特に緑と赤)
+                marksheetAreaForPdf.querySelectorAll('input[value="正"]:checked + .custom-mark').forEach(cm => {
+                    cm.style.backgroundColor = '#4CAF50';
+                    cm.style.borderColor = '#4CAF50';
+                });
+                marksheetAreaForPdf.querySelectorAll('input[value="誤"]:checked + .custom-mark').forEach(cm => {
+                    cm.style.backgroundColor = '#F44336';
+                    cm.style.borderColor = '#F44336';
+                });
 
                 try {
-                    // スクロールバーが表示されないように、一時的にoverflowをhiddenにする
-                    document.body.style.overflow = 'hidden';
+                    // pdfExportAreaをキャプチャ
+                    document.body.style.overflow = 'hidden'; // 一時的にスクロールバーを非表示に
 
-                    const canvas = await html2canvas(element, {
+                    const canvas = await html2canvas(pdfExportArea, {
                         scale: 2, // 解像度を上げる
                         useCORS: true,
-                        // PDF化する際に不要な要素を無視
-                        ignoreElements: (node) => {
-                            return node.id === 'generate-button' || node.id === 'download-pdf-button' || node.classList.contains('controls');
-                        },
-                        backgroundColor: null,
+                        backgroundColor: '#ffffff', // PDFの背景を白に設定
+                        width: pdfExportArea.offsetWidth, // PDFエクスポートエリアの幅を使用
+                        height: pdfExportArea.offsetHeight, // PDFエクスポートエリアの高さを使用
                     });
 
                     const imgData = canvas.toDataURL('image/png');
@@ -626,8 +710,8 @@
                     console.error("PDF生成中にエラーが発生しました:", error);
                     alert("PDFの生成に失敗しました。ブラウザの拡大率やコンテンツの量をご確認ください。");
                 } finally {
-                    tempHeader.remove();
-                    document.body.style.overflow = '';
+                    pdfExportArea.innerHTML = ''; // PDF出力用コンテナをクリア
+                    document.body.style.overflow = ''; // スクロールバーを元に戻す
                 }
             }
 
