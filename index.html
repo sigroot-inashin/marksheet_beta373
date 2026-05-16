@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>電子スタフシステム (自動版)</title>
+    <title>電子スタフシステム (JR東海風・サイン機能付)</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -26,7 +26,7 @@
         /* メイン時計 */
         .clock-container {
             text-align: center;
-            font-size: 48px;
+            font-size: 44px;
             font-weight: bold;
             color: #00FF00;
             font-family: monospace;
@@ -54,10 +54,7 @@
             border-radius: 5px;
             cursor: pointer;
             width: 100%;
-            display: none; /* CSV読み込み後に表示 */
-        }
-        .start-btn:active {
-            background-color: #CD853F;
+            display: none;
         }
 
         /* 行路表示テーブル */
@@ -76,17 +73,40 @@
             color: #FFFF00;
             font-size: 14px;
         }
-        /* 現在・次の行の強調 */
+        /* 現在ターゲット行の強調（JR東海風の濃い青） */
         .row-current {
-            background-color: #00008B !important; /* 濃い青 */
+            background-color: #00008B !important;
             color: #FFFFFF;
             font-weight: bold;
         }
-        /* 通過済みの行 */
+        /* 通過・確定済みの行 */
         .row-passed {
             color: #666666;
             background-color: #111111;
         }
+        
+        /* 操作用：手動サインボタン（運転中でも押しやすい巨大サイズ） */
+        .action-container {
+            margin-top: 10px;
+            display: none; /* 行路開始後に表示 */
+        }
+        .sign-btn {
+            background-color: #FFFF00;
+            color: #000000;
+            border: 3px solid #FF8C00;
+            padding: 15px 0;
+            font-size: 22px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(255,140,0,0.3);
+        }
+        .sign-btn:active {
+            background-color: #CCCC00;
+        }
+
         /* アナウンスログ表示 */
         .status-bar {
             margin-top: 10px;
@@ -101,12 +121,14 @@
 <body>
 
     <div class="header">
-        <div>下り 行路 (自動ダイヤ設定)</div>
+        <div>下り 行路 (手動サイン機能付)</div>
         <div id="gps-status" style="color: red;">GPS: 停止中</div>
     </div>
 
+    <!-- 現在時刻表示 -->
     <div class="clock-container" id="digital-clock">00:00:00</div>
 
+    <!-- コントロールエリア -->
     <div class="control-container" id="control-area">
         <div id="file-pick-section">
             <p style="font-size: 12px; margin-bottom: 5px; color: #ccc;">スタフCSVファイルを選択してください</p>
@@ -115,6 +137,7 @@
         <button class="start-btn" id="start-btn">行路開始 (出発定時)</button>
     </div>
 
+    <!-- スタフ画面 -->
     <table class="staff-table">
         <thead>
             <tr>
@@ -130,6 +153,12 @@
         </tbody>
     </table>
 
+    <!-- 大型の「通過サイン」ボタンエリア -->
+    <div class="action-container" id="action-area">
+        <button class="sign-btn" id="sign-btn">【現在地】通過 / 停車 サイン</button>
+    </div>
+
+    <!-- アナウンスガイダンス表示 -->
     <div class="status-bar" id="status-msg">
         CSVファイルを読み込んでください。
     </div>
@@ -139,61 +168,52 @@
         let routeData = [];
         let currentIndex = 0;
         let isRunning = false;
-        const APPROACH_RADIUS = 0.05; // 接近検知の半径 (約50m)
+        const APPROACH_RADIUS = 0.05; // 約50m手前
 
-        // 時計のリアルタイム更新
+        // 時計更新
         setInterval(() => {
             const now = new Date();
-            const timeStr = now.toTimeString().split(' ')[0];
-            document.getElementById('digital-clock').textContent = timeStr;
+            document.getElementById('digital-clock').textContent = now.toTimeString().split(' ')[0];
         }, 1000);
 
-        // iPhoneの音声読み上げ
+        // 音声読み上げ
         function ttsSpeak(text) {
             if ('speechSynthesis' in window) {
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = 'ja-JP';
-                utterance.rate = 1.1; // JR東海風のやや早口
+                utterance.rate = 1.1;
                 utterance.pitch = 1.0;
                 window.speechSynthesis.speak(utterance);
             }
         }
 
-        // CSVファイルの読み込み
+        // CSV読み込み
         document.getElementById('csv-file').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
             reader.onload = function(evt) {
-                const text = evt.target.result;
-                parseCSV(text);
+                parseCSV(evt.target.result);
                 document.getElementById('file-pick-section').style.display = 'none';
-                document.getElementById('start-btn').style.display = 'block'; // スタートボタンを表示
-                document.getElementById('status-msg').textContent = "データ受領。出発地に着いたら「行路開始」を押してください。";
-                ttsSpeak("ビジネスシステム、起動しました。行路設定を待機中。");
+                document.getElementById('start-btn').style.display = 'block';
+                document.getElementById('status-msg').textContent = "データ受領。出発準備よし。";
+                ttsSpeak("ビジネスシステム、起動しました。");
             };
             reader.readAsText(file, "UTF-8");
         });
 
-        // CSVパース（所要時間を読み込む仕様）
         function parseCSV(text) {
             const lines = text.split('\n');
             rawRouteData = [];
-            
             for(let i = 1; i < lines.length; i++) {
                 if(!lines[i].trim()) continue;
                 const cols = lines[i].split(',');
                 if(cols.length >= 6) {
                     rawRouteData.push({
-                        name: cols[0].trim(),
-                        lat: parseFloat(cols[1]),
-                        lon: parseFloat(cols[2]),
-                        minOffset: parseInt(cols[3]) || 0,
-                        secOffset: parseInt(cols[4]) || 0,
-                        type: cols[5].trim(),
-                        announcement: cols[6] ? cols[6].trim() : "",
-                        approached: false
+                        name: cols[0].trim(), lat: parseFloat(cols[1]), lon: parseFloat(cols[2]),
+                        minOffset: parseInt(cols[3]) || 0, secOffset: parseInt(cols[4]) || 0,
+                        type: cols[5].trim(), announcement: cols[6] ? cols[6].trim() : "", approached: false
                     });
                 }
             }
@@ -203,114 +223,113 @@
         function renderInitialTable() {
             const tbody = document.getElementById('staff-body');
             tbody.innerHTML = '';
-            rawRouteData.forEach((point) => {
+            rawRouteData.forEach(p => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${point.name}</td><td>--:--:--</td><td>${point.type}</td>`;
+                tr.innerHTML = `<td>${p.name}</td><td>--:--:--</td><td>${p.type}</td>`;
                 tbody.appendChild(tr);
             });
         }
 
-        // スタートボタンを押した瞬間にダイヤを自動生成
+        // 行路開始
         document.getElementById('start-btn').addEventListener('click', function() {
             if (rawRouteData.length === 0) return;
-            
-            let currentTime = new Date(); // 現在時刻を基準にする
+            let currentTime = new Date();
             routeData = [];
 
-            rawRouteData.forEach((point, index) => {
-                // 所要時間を足し算していく
+            rawRouteData.forEach((point) => {
                 currentTime.setMinutes(currentTime.getMinutes() + point.minOffset);
                 currentTime.setSeconds(currentTime.getSeconds() + point.secOffset);
-
-                // 表示用の時分秒テキストを作成
-                const timeStr = currentTime.toTimeString().split(' ')[0];
-
-                routeData.push({
-                    ...point,
-                    time: timeStr
-                });
+                routeData.push({ ...point, time: currentTime.toTimeString().split(' ')[0] });
             });
 
-            document.getElementById('control-area').style.display = 'none'; // コントロールエリアを隠す
+            document.getElementById('control-area').style.display = 'none';
+            document.getElementById('action-area').style.display = 'block'; // サインボタンを表示
             isRunning = true;
+            
+            updateSignButtonText();
             renderTable();
             startGPS();
 
-            // 始発駅の出発アナウンス
             const firstPoint = routeData[0];
-            document.getElementById('status-msg').textContent = firstPoint.announcement || `${firstPoint.name}を定時出発。`;
-            ttsSpeak(firstPoint.announcement || `${firstPoint.name}を定時出発。`);
+            document.getElementById('status-msg').textContent = firstPoint.announcement || `${firstPoint.name}を出発。`;
+            ttsSpeak(firstPoint.announcement || `${firstPoint.name}を出発。`);
         });
 
-        // スタフの描画
+        // サインボタンのテキストを「次のターゲット」に合わせて動的に変える
+        function updateSignButtonText() {
+            const btn = document.getElementById('sign-btn');
+            if (currentIndex < routeData.length) {
+                const target = routeData[currentIndex];
+                btn.textContent = `【${target.name}】通過 / 停車サイン`;
+            } else {
+                btn.textContent = "全行程 終了";
+                btn.disabled = true;
+                btn.style.backgroundColor = "#555";
+                btn.style.borderColor = "#333";
+                btn.style.color = "#888";
+            }
+        }
+
+        // 手動サインボタンが押された時の処理（確定処理）
+        document.getElementById('sign-btn').addEventListener('click', function() {
+            if (!isRunning || currentIndex >= routeData.length) return;
+            processPointPass();
+        });
+
+        // 通過・停車を確定させる共通ロジック
+        function processPointPass() {
+            const targetPoint = routeData[currentIndex];
+            const msg = `${targetPoint.time}、${targetPoint.name}、${targetPoint.type}。定時。`;
+            
+            document.getElementById('status-msg').textContent = msg;
+            ttsSpeak(targetPoint.announcement || msg);
+
+            currentIndex++;
+            updateSignButtonText();
+            renderTable();
+        }
+
         function renderTable() {
             const tbody = document.getElementById('staff-body');
             tbody.innerHTML = '';
-
             routeData.forEach((point, index) => {
                 const tr = document.createElement('tr');
-                if (index < currentIndex) {
-                    tr.className = 'row-passed';
-                } else if (index === currentIndex) {
-                    tr.className = 'row-current';
-                }
-
-                tr.innerHTML = `
-                    <td>${point.name}</td>
-                    <td style="font-family: monospace;">${point.time}</td>
-                    <td>${point.type}</td>
-                `;
+                if (index < currentIndex) tr.className = 'row-passed';
+                else if (index === currentIndex) tr.className = 'row-current';
+                tr.innerHTML = `<td>${point.name}</td><td style="font-family: monospace;">${point.time}</td><td>${point.type}</td>`;
                 tbody.appendChild(tr);
             });
         }
 
-        // GPS連動の開始
         function startGPS() {
-            if (!navigator.geolocation) {
-                alert("GPSに対応していません。");
-                return;
-            }
+            if (!navigator.geolocation) return;
             document.getElementById('gps-status').textContent = "GPS: 動作中";
             document.getElementById('gps-status').style.color = "#00FF00";
-
-            navigator.geolocation.watchPosition(successGPS, errorGPS, {
-                enableHighAccuracy: true,
-                timeout: 5000,
-                maximumAge: 0
-            });
+            navigator.geolocation.watchPosition(successGPS, errorGPS, { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 });
         }
 
-        function errorGPS(err) {
+        function errorGPS() {
             document.getElementById('gps-status').textContent = "GPS: 信号弱";
             document.getElementById('gps-status').style.color = "orange";
         }
 
-        // 位置情報更新時のメインロジック
+        // GPS自動検知
         function successGPS(position) {
             if (!isRunning || currentIndex >= routeData.length) return;
 
-            const currentLat = position.coords.latitude;
-            const currentLon = position.coords.longitude;
-            const targetPoint = routeData[currentIndex];
+            const distance = getDistance(position.coords.latitude, position.coords.longitude, routeData[currentIndex].lat, routeData[currentIndex].lon);
 
-            const distance = getDistance(currentLat, currentLon, targetPoint.lat, targetPoint.lon);
-
-            // 1. 接近検知 (約50m手前)
-            if (distance <= APPROACH_RADIUS && !targetPoint.approached) {
-                targetPoint.approached = true;
-                const msg = `${targetPoint.name}接近。`;
+            // 接近（自動）
+            if (distance <= APPROACH_RADIUS && !routeData[currentIndex].approached) {
+                routeData[currentIndex].approached = true;
+                const msg = `${routeData[currentIndex].name}接近。`;
                 document.getElementById('status-msg').textContent = msg;
                 ttsSpeak(msg);
             }
 
-            // 2. 通過・到着検知 (約15m以内)
+            // 通過・到着（自動）
             if (distance <= 0.015) { 
-                const msg = `${targetPoint.time}、${targetPoint.name}、${targetPoint.type}。定時。`;
-                document.getElementById('status-msg').textContent = msg;
-                ttsSpeak(targetPoint.announcement || msg);
-
-                currentIndex++;
-                renderTable();
+                processPointPass();
             }
         }
 
@@ -318,11 +337,8 @@
             const R = 6371; 
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         }
     </script>
 </body>
