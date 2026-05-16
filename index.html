@@ -2,19 +2,18 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>電子スタフシステム (JR東海風・サイン機能付)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>電子スタフシステム (スマホ完全対応版)</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             background-color: #000000;
             color: #ffffff;
             font-family: 'Hiragino Kaku Gothic ProN', sans-serif;
-            padding: 10px;
+            padding: env(safe-area-inset-top) 10px env(safe-area-inset-bottom) 10px;
             overflow: hidden;
             user-select: none;
         }
-        /* ヘッダー情報 */
         .header {
             display: flex;
             justify-content: space-between;
@@ -23,7 +22,6 @@
             font-size: 14px;
             color: #aaa;
         }
-        /* メイン時計 */
         .clock-container {
             text-align: center;
             font-size: 44px;
@@ -34,7 +32,6 @@
             border: 2px solid #333;
             background: #111;
         }
-        /* コントロールエリア */
         .control-container {
             background: #222;
             padding: 10px;
@@ -56,8 +53,6 @@
             width: 100%;
             display: none;
         }
-
-        /* 行路表示テーブル */
         .staff-table {
             width: 100%;
             border-collapse: collapse;
@@ -73,22 +68,18 @@
             color: #FFFF00;
             font-size: 14px;
         }
-        /* 現在ターゲット行の強調（JR東海風の濃い青） */
         .row-current {
             background-color: #00008B !important;
             color: #FFFFFF;
             font-weight: bold;
         }
-        /* 通過・確定済みの行 */
         .row-passed {
             color: #666666;
             background-color: #111111;
         }
-        
-        /* 操作用：手動サインボタン（運転中でも押しやすい巨大サイズ） */
         .action-container {
             margin-top: 10px;
-            display: none; /* 行路開始後に表示 */
+            display: none;
         }
         .sign-btn {
             background-color: #FFFF00;
@@ -101,13 +92,7 @@
             cursor: pointer;
             width: 100%;
             text-align: center;
-            box-shadow: 0 4px 10px rgba(255,140,0,0.3);
         }
-        .sign-btn:active {
-            background-color: #CCCC00;
-        }
-
-        /* アナウンスログ表示 */
         .status-bar {
             margin-top: 10px;
             padding: 10px;
@@ -117,18 +102,18 @@
             min-height: 40px;
         }
     </style>
+    <!-- ★ 画面スリープを強制防止する最先端のライブラリ（NoSleep.js）を導入 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js"></script>
 </head>
 <body>
 
     <div class="header">
-        <div>下り 行路 (手動サイン機能付)</div>
+        <div>下り 行路 (スマホ対応・自動スリープ防止機能内蔵)</div>
         <div id="gps-status" style="color: red;">GPS: 停止中</div>
     </div>
 
-    <!-- 現在時刻表示 -->
     <div class="clock-container" id="digital-clock">00:00:00</div>
 
-    <!-- コントロールエリア -->
     <div class="control-container" id="control-area">
         <div id="file-pick-section">
             <p style="font-size: 12px; margin-bottom: 5px; color: #ccc;">スタフCSVファイルを選択してください</p>
@@ -137,7 +122,6 @@
         <button class="start-btn" id="start-btn">行路開始 (出発定時)</button>
     </div>
 
-    <!-- スタフ画面 -->
     <table class="staff-table">
         <thead>
             <tr>
@@ -153,12 +137,10 @@
         </tbody>
     </table>
 
-    <!-- 大型の「通過サイン」ボタンエリア -->
     <div class="action-container" id="action-area">
         <button class="sign-btn" id="sign-btn">【現在地】通過 / 停車 サイン</button>
     </div>
 
-    <!-- アナウンスガイダンス表示 -->
     <div class="status-bar" id="status-msg">
         CSVファイルを読み込んでください。
     </div>
@@ -168,22 +150,74 @@
         let routeData = [];
         let currentIndex = 0;
         let isRunning = false;
-        const APPROACH_RADIUS = 1.5; // 約50m手前
+        const APPROACH_RADIUS = 0.5; // ★500m手前で接近検知
 
-        // 時計更新
+        // NoSleepオブジェクトの初期化
+        const noSleep = new NoSleep();
+
+        // オーディオコンテキストの先出し初期化用
+        let audioCtx = null;
+
         setInterval(() => {
             const now = new Date();
             document.getElementById('digital-clock').textContent = now.toTimeString().split(' ')[0];
         }, 1000);
 
-        // 音声読み上げ
-        function ttsSpeak(text) {
+        // iPhoneのオーディオ制限を解除するためのダミー処理
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) audioCtx = new AudioContext();
+            }
+            // iPhone特有の音声読み上げミュートを1回喋らせて解除
             if ('speechSynthesis' in window) {
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'ja-JP';
-                utterance.rate = 1.1;
-                utterance.pitch = 1.0;
-                window.speechSynthesis.speak(utterance);
+                const u = new SpeechSynthesisUtterance('');
+                window.speechSynthesis.speak(u);
+            }
+        }
+
+        // 🎵 JR東海風の電子アラーム音
+        function playAlarmSound() {
+            if (!audioCtx) return;
+            // 停止していたら再開
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const times = [0, 0.15, 0.3];
+            times.forEach(startTime => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(2000, audioCtx.currentTime + startTime);
+                
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime + startTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + startTime + 0.1);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start(audioCtx.currentTime + startTime);
+                osc.stop(audioCtx.currentTime + startTime + 0.1);
+            });
+        }
+
+        // iPhone対応音声読み上げ
+        function ttsSpeak(text, withAlarm = false) {
+            if ('speechSynthesis' in window) {
+                if (withAlarm) {
+                    playAlarmSound();
+                }
+                
+                setTimeout(() => {
+                    // 読み上げ中の音声を強制停止して次を喋らせる（遅延対策）
+                    window.speechSynthesis.cancel();
+                    
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'ja-JP';
+                    utterance.rate = 1.15; // JR東海風のキビキビしたテンポ
+                    utterance.pitch = 1.0;
+                    window.speechSynthesis.speak(utterance);
+                }, withAlarm ? 450 : 0);
             }
         }
 
@@ -198,7 +232,9 @@
                 document.getElementById('file-pick-section').style.display = 'none';
                 document.getElementById('start-btn').style.display = 'block';
                 document.getElementById('status-msg').textContent = "データ受領。出発準備よし。";
-                ttsSpeak("ビジネスシステム、起動しました。");
+                
+                // 初回タップ前の準備としてオーディオを有効化
+                initAudio();
             };
             reader.readAsText(file, "UTF-8");
         });
@@ -230,9 +266,16 @@
             });
         }
 
-        // 行路開始
+        // ★ 行路開始ボタン（ここでスマホの全制限を解除する）
         document.getElementById('start-btn').addEventListener('click', function() {
             if (rawRouteData.length === 0) return;
+
+            // 1. iPhoneのサウンド・音声のロックを完全解除
+            initAudio();
+
+            // 2. スマホの自動スリープ（画面暗転）をバックグラウンドで強制阻止！
+            noSleep.enable();
+
             let currentTime = new Date();
             routeData = [];
 
@@ -243,7 +286,7 @@
             });
 
             document.getElementById('control-area').style.display = 'none';
-            document.getElementById('action-area').style.display = 'block'; // サインボタンを表示
+            document.getElementById('action-area').style.display = 'block';
             isRunning = true;
             
             updateSignButtonText();
@@ -252,10 +295,9 @@
 
             const firstPoint = routeData[0];
             document.getElementById('status-msg').textContent = firstPoint.announcement || `${firstPoint.name}を出発。`;
-            ttsSpeak(firstPoint.announcement || `${firstPoint.name}を出発。`);
+            ttsSpeak(firstPoint.announcement || `${firstPoint.name}を出発。`, false);
         });
 
-        // サインボタンのテキストを「次のターゲット」に合わせて動的に変える
         function updateSignButtonText() {
             const btn = document.getElementById('sign-btn');
             if (currentIndex < routeData.length) {
@@ -267,22 +309,23 @@
                 btn.style.backgroundColor = "#555";
                 btn.style.borderColor = "#333";
                 btn.style.color = "#888";
+                // 全行程終了したらスリープ禁止を解除
+                noSleep.disable();
             }
         }
 
-        // 手動サインボタンが押された時の処理（確定処理）
+        // 手動サイン
         document.getElementById('sign-btn').addEventListener('click', function() {
             if (!isRunning || currentIndex >= routeData.length) return;
             processPointPass();
         });
 
-        // 通過・停車を確定させる共通ロジック
         function processPointPass() {
             const targetPoint = routeData[currentIndex];
             const msg = `${targetPoint.time}、${targetPoint.name}、${targetPoint.type}。定時。`;
             
             document.getElementById('status-msg').textContent = msg;
-            ttsSpeak(targetPoint.announcement || msg);
+            ttsSpeak(targetPoint.announcement || msg, false);
 
             currentIndex++;
             updateSignButtonText();
@@ -305,7 +348,12 @@
             if (!navigator.geolocation) return;
             document.getElementById('gps-status').textContent = "GPS: 動作中";
             document.getElementById('gps-status').style.color = "#00FF00";
-            navigator.geolocation.watchPosition(successGPS, errorGPS, { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 });
+            // スマホ向けに最高精度のGPS設定を強制
+            navigator.geolocation.watchPosition(successGPS, errorGPS, { 
+                enableHighAccuracy: true, 
+                timeout: 10000, 
+                maximumAge: 0 
+            });
         }
 
         function errorGPS() {
@@ -313,21 +361,20 @@
             document.getElementById('gps-status').style.color = "orange";
         }
 
-        // GPS自動検知
         function successGPS(position) {
             if (!isRunning || currentIndex >= routeData.length) return;
 
             const distance = getDistance(position.coords.latitude, position.coords.longitude, routeData[currentIndex].lat, routeData[currentIndex].lon);
 
-            // 接近（自動）
+            // 接近判定 (500m手前)
             if (distance <= APPROACH_RADIUS && !routeData[currentIndex].approached) {
                 routeData[currentIndex].approached = true;
                 const msg = `${routeData[currentIndex].name}接近。`;
                 document.getElementById('status-msg').textContent = msg;
-                ttsSpeak(msg);
+                ttsSpeak(msg, true); 
             }
 
-            // 通過・到着（自動）
+            // 通過・到着判定 (約15m以内)
             if (distance <= 0.015) { 
                 processPointPass();
             }
