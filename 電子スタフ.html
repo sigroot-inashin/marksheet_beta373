@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>JR EAST MOBILE ATOS Pro - 天竜川セクション対応版</title>
+<style>
+*{ margin:0; padding:0; box-sizing:border-box; }
+html,body{ width:100%; height:100%; overflow:hidden; background:#000; color:#00ff66; font-family:"MS Gothic",monospace; }
+.header{ height:64px; border-bottom:2px solid #00aa44; background:#050505; display:flex; align-items:center; justify-content:space-between; padding:10px; }
+.train-no{ font-size:28px; font-weight:bold; }
+.header-right{ display:flex; flex-direction:column; align-items:flex-end; }
+.clock{ font-size:22px; color:#ffaa00; }
+.speed{ font-size:14px; color:#00ffff; }
+.next-area{ height:180px; border-bottom:2px solid #00aa44; padding:15px; background:#001100; }
+.next-label{ font-size:18px; color:#fff; }
+.next-station{ margin-top:5px; font-size:42px; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.next-type{ margin-top:4px; color:#ffaa00; font-size:20px; }
+.info-row{ display:flex; gap:10px; margin-top:10px; }
+.info-box{ flex:1; border:1px solid #00aa44; background:#000; padding:6px; text-align:center; }
+.info-title{ font-size:11px; color:#999; }
+.info-value{ margin-top:2px; font-size:20px; color:#fff; font-weight:bold; }
+.route-table{ flex:1; overflow-y:auto; background:#000; height:calc(100% - 64px - 180px - 120px); }
+.route-row{ display:grid; grid-template-columns:50px 1fr 75px 75px 65px 40px; min-height:50px; align-items:center; border-bottom:1px solid #003300; padding:0 8px; }
+.route-header{ position:sticky; top:0; background:#111; z-index:100; color:#fff; }
+.route-active{ background:#003300; }
+.route-passed{ opacity:0.5; color:#888; }
+.cell{ font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cell-actual{ color:#ffaa00; }
+.cell-diff{ font-weight:bold; text-align:right; }
+.diff-early{ color:#00ffff; }
+.diff-late{ color:#ff4444; }
+.diff-on-time{ color:#00ff66; }
+.footer{ height:120px; border-top:2px solid #00aa44; background:#050505; padding:10px; }
+.status{ font-size:13px; color:#fff; margin-bottom:8px; }
+.button-row{ display:flex; gap:10px; }
+.ctrl-btn{ flex:1; height:55px; border:none; font-size:18px; font-weight:bold; cursor:pointer; border-radius:4px; }
+.btn-green{ background:#003300; color:#00ff66; border:2px solid #00ff66; }
+.btn-orange{ background:#332200; color:#ffaa00; border:2px solid #ffaa00; }
+.btn-red{ background:#330000; color:#ff4444; border:2px solid #ff4444; }
+.init-screen{ position:fixed; inset:0; background:#000; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; }
+.file-btn{ background:#003300; border:2px solid #00ff66; color:#00ff66; padding:20px 40px; font-size:22px; cursor:pointer; }
+@media(max-width:600px){
+    .next-station{ font-size:32px; }
+    .route-row{ grid-template-columns:45px 1fr 68px 68px 55px 30px; }
+    .cell{ font-size:11px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="train-no">天竜運行</div>
+    <div class="header-right">
+        <div class="clock" id="clock">00:00:00</div>
+        <div class="speed" id="speed">0 km/h</div>
+    </div>
+</div>
+
+<div class="next-area">
+    <div class="next-label">次駅ターゲット</div>
+    <div class="next-station" id="nextStation">--</div>
+    <div class="next-type" id="nextType">--</div>
+    <div class="info-row">
+        <div class="info-box">
+            <div class="info-title">残距離</div>
+            <div class="info-value" id="distanceView">---</div>
+        </div>
+        <div class="info-box">
+            <div class="info-title">到着予測時刻</div>
+            <div class="info-value" id="etaView">--:--:--</div>
+        </div>
+    </div>
+</div>
+
+<div class="route-table" id="routeTable">
+    <div class="route-row route-header">
+        <div class="cell">種別</div>
+        <div class="cell">駅名</div>
+        <div class="cell">計画</div>
+        <div class="cell">実績</div>
+        <div class="cell">誤差</div>
+        <div class="cell">状態</div>
+    </div>
+</div>
+
+<div class="footer">
+    <div class="status" id="statusText">システム待機中（CSVを読み込んでください）</div>
+    <div class="button-row">
+        <button class="ctrl-btn btn-green" id="arrivalBtn">到着/運転</button>
+        <button class="ctrl-btn btn-orange" id="skipBtn">通過</button>
+        <button class="ctrl-btn btn-red" id="announceBtn">手動放送</button>
+    </div>
+</div>
+
+<div class="init-screen" id="initScreen">
+    <div style="font-size:24px; font-weight:bold; text-align:center; margin-bottom:10px;">
+        JR EAST MOBILE SYSTEM Pro<br>
+        <span style="font-size:16px; color:#ffaa00;">天竜川自動ナビゲーション仕様</span>
+    </div>
+    <label class="file-btn">
+        スタフCSV読込
+        <input type="file" id="csvFile" accept=".csv" hidden>
+    </label>
+</div>
+
+<script>
+/* =========================
+GLOBAL
+========================= */
+let routeData = [];
+let currentIndex = 0;
+let warned2000 = false;
+let warned500 = false;
+
+let currentPosition = { lat:0, lon:0 };
+let lastPosition = null;
+let lastTimestamp = null;
+let watchId = null;
+
+let audioCtx = null;
+let speakerFilter = null;
+let ttsUnlocked = false;
+
+// 画面クリックでTTSをアンロック
+document.body.addEventListener("click", () => {
+    if (ttsUnlocked) return;
+    try {
+        const u = new SpeechSynthesisUtterance("");
+        speechSynthesis.speak(u);
+        ttsUnlocked = true;
+        console.log("TTS READY");
+    } catch(e) { console.log(e); }
+});
+
+function initAudio() {
+    if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+        speakerFilter = audioCtx.createBiquadFilter();
+        speakerFilter.type = "lowpass";
+        speakerFilter.frequency.setValueAtTime(2500, audioCtx.currentTime); // 鉄道スピーカー風のこもり感を演出
+        speakerFilter.connect(audioCtx.destination);
+    }
+    if (audioCtx.state === "suspended") { audioCtx.resume(); }
+}
+
+/* =========================
+CLOCK
+========================= */
+function formatTime(h, m, s) {
+    return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+}
+
+function getNowTimeString() {
+    const now = new Date();
+    return formatTime(now.getHours(), now.getMinutes(), now.getSeconds());
+}
+
+setInterval(() => {
+    document.getElementById("clock").textContent = getNowTimeString();
+}, 1000);
+
+/* =========================
+CSV LOAD & PARSE
+========================= */
+document.getElementById("csvFile").addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = evt => {
+        parseCSV(evt.target.result);
+        if (routeData.length === 0) {
+            alert("CSV解析失敗、またはデータが空です");
+            return;
+        }
+        currentIndex = 0;
+        renderTable();
+        updateUI();
+        document.getElementById("initScreen").style.display = "none";
+        initAudio();
+        startGPS();
+        
+        // 開始アナウンス（最初の駅の案内を流す）
+        triggerStationAnnounce(routeData[0], "start");
+    };
+    reader.readAsText(file, "UTF-8");
+});
+
+function parseCSV(text) {
+    const lines = text.split(/\r?\n/);
+    routeData = [];
+    
+    // 現在時刻を基準のスタート時間にする
+    let baseTime = new Date();
+
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        // カンマ区切りのパース（簡易版かつ、ダブルクォーテーションやドット混在に対応）
+        const cols = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+        if (cols.length < 6) continue;
+
+        const stationName = cols[0].replace(/^"|"$/g, "").trim();
+        let lat = parseFloat(cols[1]);
+        let lon = parseFloat(cols[2]);
+        const minOffset = parseInt(cols[3]) || 0;
+        const secOffset = parseInt(cols[4]) || 0;
+        const type = cols[5].replace(/^"|"$/g, "").trim();
+        const rawAnnounce = cols[6] ? cols[6].replace(/^"|"$/g, "").trim() : "";
+
+        // 城西駅の経度タイポ(136.8620 -> 137.8620)をプログラム側で救済
+        if (stationName.includes("城西") && lon < 137.0) {
+            lon = 137.8620;
+        }
+
+        // 相対時間（オフセット）を絶対時刻に変換して計画時間を決定
+        baseTime.setMinutes(baseTime.getMinutes() + minOffset);
+        baseTime.setSeconds(baseTime.getSeconds() + secOffset);
+        const plannedTimeStr = formatTime(baseTime.getHours(), baseTime.getMinutes(), baseTime.getSeconds());
+
+        // アナウンスの日本語と英語を分離 (「..」で区切られているケースに対応)
+        let jaText = rawAnnounce;
+        let enText = "";
+        if (rawAnnounce.includes("..")) {
+            const parts = rawAnnounce.split("..");
+            jaText = parts[0].trim();
+            enText = parts[1].trim();
+        }
+
+        routeData.push({
+            station: stationName,
+            lat: lat,
+            lon: lon,
+            time: plannedTimeStr,
+            type: type,
+            japaneseText: jaText,
+            englishText: enText,
+            actualTime: "",
+            diffText: ""
+        });
+    }
+}
+
+/* =========================
+RENDER TABLE & UI
+========================= */
+function renderTable() {
+    const table = document.getElementById("routeTable");
+    document.querySelectorAll(".data-row").forEach(x => x.remove());
+
+    routeData.forEach((r, index) => {
+        const row = document.createElement("div");
+        row.className = "route-row data-row";
+
+        if (index === currentIndex) {
+            row.classList.add("route-active");
+        } else if (index < currentIndex) {
+            row.classList.add("route-passed");
+        }
+
+        let diffClass = "diff-on-time";
+        if (r.diffText.startsWith("+")) diffClass = "diff-late";
+        else if (r.diffText.startsWith("-")) diffClass = "diff-early";
+
+        row.innerHTML = `
+            <div class="cell">${r.type}</div>
+            <div class="cell" style="font-weight:bold;">${r.station}</div>
+            <div class="cell">${r.time}</div>
+            <div class="cell cell-actual">${r.actualTime || "--:--:--"}</div>
+            <div class="cell cell-diff ${diffClass}">${r.diffText || "--"}</div>
+            <div class="cell">${index < currentIndex ? "済" : index === currentIndex ? "接近" : "待"}</div>
+        `;
+        table.appendChild(row);
+    });
+}
+
+function updateUI() {
+    if (currentIndex >= routeData.length) {
+        document.getElementById("nextStation").textContent = "全行程終了";
+        document.getElementById("nextType").textContent = "完了";
+        document.getElementById("distanceView").textContent = "---";
+        document.getElementById("etaView").textContent = "--:--:--";
+        document.getElementById("statusText").textContent = "全目的地へ案内を完了しました。";
+        return;
+    }
+
+    const target = routeData[currentIndex];
+    document.getElementById("nextStation").textContent = target.station;
+    document.getElementById("nextType").textContent = `${target.type}対象`;
+    document.getElementById("statusText").textContent = `次駅【${target.station}】に接近中...`;
+}
+
+/* =========================
+GPS LOGIC
+========================= */
+function startGPS() {
+    if (!navigator.geolocation) {
+        document.getElementById("statusText").textContent = "GPS非対応デバイスです";
+        return;
+    }
+    watchId = navigator.geolocation.watchPosition(gpsSuccess, gpsError, {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 1000
+    });
+}
+
+function gpsSuccess(pos) {
+    if (currentIndex >= routeData.length) return;
+
+    currentPosition.lat = pos.coords.latitude;
+    currentPosition.lon = pos.coords.longitude;
+    let speed = pos.coords.speed;
+
+    // 速度が取得できない場合の擬似計算
+    if (speed == null && lastPosition) {
+        const moved = calcDistance(lastPosition.lat, lastPosition.lon, currentPosition.lat, currentPosition.lon) * 1000;
+        const timeDiff = (pos.timestamp - lastTimestamp) / 1000;
+        if (timeDiff > 0) speed = moved / timeDiff;
+    }
+    if (!speed || speed < 0) speed = 0;
+
+    lastPosition = { lat: currentPosition.lat, lon: currentPosition.lon };
+    lastTimestamp = pos.timestamp;
+
+    const kmh = Math.round(speed * 3.6);
+    document.getElementById("speed").textContent = kmh + " km/h";
+
+    const target = routeData[currentIndex];
+    const dist = calcDistance(currentPosition.lat, currentPosition.lon, target.lat, target.lon);
+
+    updateDistance(dist);
+    updateETA(dist, speed);
+
+    /* =========================================
+       ★ ご要望：2キロ手前と500メートル手前の段階案内
+       ========================================= */
+    // 1. 残り2.0km以下になったとき（第1段階接近）
+    if (dist <= 2.0 && !warned2000) {
+        warned2000 = true;
+        triggerStationAnnounce(target, "approach");
+    }
+
+    // 2. 残り0.5km(500m)以下になったとき（第2段階まもなく告知）
+    if (dist <= 0.5 && !warned500) {
+        warned500 = true;
+        triggerStationAnnounce(target, "soon");
+    }
+}
+
+function gpsError(err) {
+    console.log("GPSエラー:", err);
+    document.getElementById("statusText").textContent = `GPS信号ロスト(コード:${err.code})`;
+}
+
+/* =========================
+TTS AUDIO ENGINE (日本語・英語の連続対応)
+========================= */
+function executeTTS(text, lang = "ja-JP", callback = null) {
+    if (!("speechSynthesis" in window)) return;
+
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = lang;
+    utter.rate = lang === "ja-JP" ? 0.95 : 0.9; // 聞き取りやすいよう少しゆっくり
+    utter.pitch = lang === "ja-JP" ? 0.95 : 1.05;
+
+    if (lang === "ja-JP") {
+        const voices = speechSynthesis.getVoices();
+        const jaVoice = voices.find(v => v.lang.includes("ja"));
+        if (jaVoice) utter.voice = jaVoice;
+    }
+
+    if (callback) {
+        utter.onend = callback;
+    }
+
+    speechSynthesis.speak(utter);
+}
+
+// 段階に応じた完璧な音声アナウンス制御
+function triggerStationAnnounce(target, phase) {
+    initAudio();
+    speechSynthesis.cancel(); // 前の音声をクリア
+
+    if (phase === "start") {
+        // 出発案内 (CSVのセリフをそのまま再現)
+        executeTTS(target.japaneseText, "ja-JP");
+        return;
+    }
+
+    if (phase === "approach") {
+        // 2km手前案内：「次は、〇〇（停車/通過）です」
+        const text = `次は、${target.station}、${target.type}です。`;
+        executeTTS(text, "ja-JP", () => {
+            if (target.englishText) {
+                // 日本語が終わったら英語を自動再生
+                executeTTS(target.englishText, "en-US");
+            }
+        });
+    } else if (phase === "soon") {
+        // 500m手前案内：「まもなく、〇〇です / 通過します」
+        let text = `まもなく、${target.station}です。`;
+        if (target.type === "通過") {
+            text = `まもなく、${target.station}を通過します。`;
+        }
+        executeTTS(text, "ja-JP");
+    }
+}
+
+/* =========================
+UTILITIES (DISTANCE / ETA / DIFF)
+========================= */
+function updateDistance(dist) {
+    document.getElementById("distanceView").textContent = 
+        dist >= 1 ? dist.toFixed(2) + "km" : Math.round(dist * 1000) + "m";
+}
+
+function updateETA(dist, speed) {
+    if (speed <= 0.5) { // 停車中、または極低速時は予測不能にする
+        document.getElementById("etaView").textContent = "--:--:--";
+        return;
+    }
+    const sec = (dist * 1000) / speed;
+    const eta = new Date(Date.now() + sec * 1000);
+    document.getElementById("etaView").textContent = formatTime(eta.getHours(), eta.getMinutes(), eta.getSeconds());
+}
+
+function calcDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function calculateTimeDifference(plannedStr, actualStr) {
+    const now = new Date();
+    const p = plannedStr.split(":").map(Number);
+    const a = actualStr.split(":").map(Number);
+    const pDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), p[0], p[1], p[2]);
+    const aDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), a[0], a[1], a[2]);
+
+    let diff = Math.round((aDate - pDate) / 1000);
+    if (diff === 0) return "±0s";
+    const sign = diff > 0 ? "+" : "-";
+    diff = Math.abs(diff);
+
+    if (diff < 60) return `${sign}${diff}s`;
+    const mins = Math.floor(diff / 60);
+    const secs = diff % 60;
+    return secs === 0 ? `${sign}${mins}m` : `${sign}${mins}m${secs}s`;
+}
+
+function processManualEvent() {
+    if (currentIndex >= routeData.length) return;
+
+    const target = routeData[currentIndex];
+    const actual = getNowTimeString();
+
+    target.actualTime = actual;
+    target.diffText = calculateTimeDifference(target.time, actual);
+
+    // イベント通過のためフラグをリセット
+    currentIndex++;
+    warned2000 = false;
+    warned500 = false;
+
+    renderTable();
+    updateUI();
+
+    // 次の駅があれば、その駅の初期案内を流す
+    if (currentIndex < routeData.length) {
+        triggerStationAnnounce(routeData[currentIndex], "approach");
+    }
+}
+
+/* =========================
+BUTTON EVENTS
+========================= */
+document.getElementById("arrivalBtn").addEventListener("click", processManualEvent);
+document.getElementById("skipBtn").addEventListener("click", processManualEvent);
+document.getElementById("announceBtn").addEventListener("click", () => {
+    if (currentIndex >= routeData.length) return;
+    triggerStationAnnounce(routeData[currentIndex], "approach");
+});
+</script>
+</body>
+</html>
