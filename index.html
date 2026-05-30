@@ -396,6 +396,63 @@ html, body {
     border-radius: 8px;
     box-shadow: 0 0 15px rgba(0,135,71,0.4);
     display: none; 
+}/* iPhone14・スマホ縦 */
+@media screen and (max-width: 768px) {
+
+    .header{
+        height:55px;
+        padding:0 8px;
+    }
+
+    .header-center{
+        display:none;
+    }
+
+    .train-no{
+        font-size:16px;
+    }
+
+    .clock{
+        font-size:18px;
+    }
+
+    .main-content{
+        flex-direction:column;
+    }
+
+    .left-column{
+        width:100%;
+        height:40%;
+        border-right:none;
+        border-bottom:2px solid #222;
+    }
+
+    .right-column{
+        width:100%;
+        flex-direction:column;
+        padding:8px;
+    }
+
+    .next-station-name{
+        font-size:32px;
+    }
+
+    .metric-value{
+        font-size:26px;
+    }
+
+    .footer{
+        height:75px;
+    }
+
+    .ctrl-btn{
+        height:38px;
+        font-size:13px;
+    }
+
+    .right-bar-indicator{
+        display:none;
+    }
 }
 </style>
 </head>
@@ -606,6 +663,22 @@ function parseCSV(text) {
 
         let jaText = rawAnnounce;
         let enText = "";
+       let enText = "";
+
+if(currentIndex + 1 < routeData.length){
+
+    const nextNext = routeData[currentIndex + 1];
+
+    enText =
+      `We will soon arrive at ${target.station}. ` +
+      `The next stop after ${target.station} will be ${nextNext.station}.`;
+
+}else{
+
+    enText =
+      `We will soon arrive at ${target.station}. ` +
+      `This train terminates here.`;
+}
         if (rawAnnounce.includes("..")) {
             const parts = rawAnnounce.split("..");
             jaText = parts[0].trim();
