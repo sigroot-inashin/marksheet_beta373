@@ -1,1 +1,985 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>乗務支援ナビゲーションシステム - JR東日本ATOS放送完全再現版</title>
+<style>
+/* ==========================================
+   BASE STYLES & FONTS (埼京線E233系イメージカラー)
+   ========================================== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000000; 
+    color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Arial", "Hiragino Kaku Gothic ProN", sans-serif;
+    -webkit-user-select: none;
+    user-select: none;
+}
 
+.app-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+}
+
+/* 上部ヘッダー（埼京線グリーン仕様） */
+.header {
+    height: 65px;
+    background: #111111; 
+    border-bottom: 3px solid #008747; /* 埼京線グリーン */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+}
+.train-info-block {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.train-type {
+    font-size: 14px;
+    font-weight: bold;
+    background: #008747;
+    color: #ffffff;
+    padding: 3px 8px;
+    border-radius: 3px;
+}
+.train-no {
+    font-size: 24px;
+    font-weight: 900;
+    background: #222222;
+    color: #ffffff;
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid #333333;
+    letter-spacing: 1px;
+}
+.car-type {
+    font-size: 16px;
+    color: #00ff66; 
+    background: #222222;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-weight: bold;
+    border: 1px solid #333333;
+}
+.header-center {
+    font-size: 26px;
+    font-weight: bold;
+    color: #ffffff;
+    letter-spacing: 2px;
+}
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+.clock {
+    font-size: 28px;
+    font-weight: bold;
+    color: #00ff66; 
+    font-variant-numeric: tabular-nums;
+}
+.speed-block {
+    text-align: right;
+    min-width: 100px;
+}
+.speed {
+    font-size: 24px;
+    font-weight: bold;
+    color: #ffffff;
+    font-variant-numeric: tabular-nums;
+}
+.speed-max {
+    font-size: 11px;
+    color: #888888;
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+/* LEFT COLUMN: 駅一覧 */
+.left-column {
+    width: 38%; 
+    border-right: 2px solid #222222;
+    display: flex;
+    flex-direction: column;
+    background: #050505;
+}
+.route-table-header {
+    display: grid;
+    grid-template-columns: 50px 1fr 85px 85px 65px; 
+    padding: 12px 10px;
+    background: #111111;
+    border-bottom: 2px solid #222222;
+    font-size: 13px;
+    color: #888888;
+    font-weight: bold;
+}
+.route-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+}
+.route-row {
+    display: grid;
+    grid-template-columns: 50px 1fr 85px 85px 65px;
+    min-height: 54px;
+    align-items: center;
+    border-bottom: 1px solid #111111;
+    padding: 4px 10px;
+    font-size: 16px;
+    font-variant-numeric: tabular-nums;
+}
+.cell-type-icon {
+    display: inline-block;
+    width: 34px;
+    text-align: center;
+    padding: 3px 0;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+}
+.type-stop { background: #008747; color: #ffffff; } 
+.type-pass { background: #333333; color: #aaaaaa; } 
+
+.cell-station { font-weight: bold; color: #ffffff; }
+.cell-plan { color: #aaaaaa; }
+.cell-actual { color: #00ff66; } 
+.cell-diff { font-weight: bold; text-align: right; }
+.diff-early { color: #00aaff; } 
+.diff-late { color: #ff5500; }  
+.diff-on-time { color: #00ff66; } 
+
+.route-active {
+    background: #001f11;
+    box-shadow: inset 0 0 0 2px #008747;
+}
+.route-passed {
+    opacity: 0.3;
+}
+
+/* RIGHT COLUMN: メインナビゲーションパネル */
+.right-column {
+    flex: 1;
+    display: flex;
+    padding: 20px;
+    gap: 20px;
+    background: #000000;
+}
+.navi-main-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.next-station-box {
+    background: #111111;
+    border: 1px solid #222222;
+    border-radius: 8px;
+    padding: 20px;
+}
+.next-label {
+    font-size: 13px;
+    color: #888888;
+    margin-bottom: 4px;
+}
+.next-station-flex {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.next-station-name {
+    font-size: 56px;
+    font-weight: bold;
+    color: #ffffff;
+}
+.next-type-badge {
+    font-size: 22px;
+    font-weight: bold;
+    padding: 4px 16px;
+    border-radius: 4px;
+    background: #008747;
+    color: #ffffff;
+}
+.next-type-badge.badge-pass {
+    background: #333333;
+    color: #aaaaaa;
+}
+
+.navi-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+.metric-box {
+    background: #111111;
+    border: 1px solid #222222;
+    border-radius: 8px;
+    padding: 16px;
+}
+.metric-label {
+    font-size: 13px;
+    color: #888888;
+}
+.metric-value {
+    font-size: 46px;
+    font-weight: bold;
+    margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+}
+#distanceView { color: #ffffff; }
+#etaView { color: #00ff66; } 
+
+/* 保安装置・パターングラフィック */
+.sign-container {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    padding: 16px;
+    background: #111111;
+    border-radius: 8px;
+    border: 1px solid #222222;
+}
+.speed-limit-sign {
+    background: #ffffff;
+    color: #000000;
+    font-size: 32px;
+    font-weight: 900;
+    padding: 2px 14px;
+    border: 4px solid #ff3b30;
+    border-radius: 4px;
+    min-width: 85px;
+    text-align: center;
+}
+.ats-diamond {
+    width: 48px;
+    height: 48px;
+    background: #ffffff;
+    border: 4px solid #008747; 
+    color: #000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: bold;
+    transform: rotate(45deg);
+}
+.ats-diamond span {
+    transform: rotate(-45deg);
+}
+.pattern-sign {
+    background: #008747;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 6px 12px;
+    border-radius: 4px;
+}
+
+/* 進捗バーシークエンス */
+.right-bar-indicator {
+    width: 40px;
+    background: #111111;
+    border-radius: 6px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 0;
+    border: 1px solid #222222;
+}
+.indicator-line {
+    position: absolute;
+    top: 25px;
+    bottom: 25px;
+    width: 6px;
+    background: #222222;
+    border-radius: 3px;
+}
+.indicator-fill {
+    position: absolute;
+    bottom: 25px;
+    width: 6px;
+    background: #008747; 
+    height: 0%; 
+    border-radius: 3px;
+    transition: height 0.2s linear;
+}
+.indicator-node {
+    z-index: 2;
+    width: 16px;
+    height: 16px;
+    background: #333333;
+    border: 2px solid #ffffff;
+    border-radius: 4px;
+}
+.indicator-node.active {
+    background: #008747;
+    box-shadow: 0 0 8px #008747;
+}
+
+/* フッターコントロール */
+.footer {
+    height: 95px;
+    background: #111111;
+    border-top: 2px solid #222222;
+    padding: 10px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.status {
+    font-size: 13px;
+    color: #aaaaaa;
+}
+.button-row {
+    display: flex;
+    gap: 15px;
+}
+.ctrl-btn {
+    flex: 1;
+    height: 48px;
+    border: none;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 4px;
+}
+.btn-green { background: #0c2618; color: #44cc77; border: 1px solid #1c663a; }
+.btn-green:active { background: #143d26; }
+.btn-orange { background: #3a220b; color: #ffaa44; border: 1px solid #cc7722; }
+.btn-orange:active { background: #543210; }
+.btn-red { background: #3a1414; color: #ff6666; border: 1px solid #cc3333; }
+.btn-red:active { background: #541d1d; }
+
+/* 初期スクリーン */
+.init-screen {
+    position: fixed;
+    inset: 0;
+    background: #000000;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 25px;
+}
+.file-btn {
+    background: #111111;
+    border: 2px solid #008747;
+    color: #ffffff;
+    padding: 16px 40px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 6px;
+    text-align: center;
+}
+.start-btn {
+    background: #008747;
+    color: #ffffff;
+    border: none;
+    padding: 20px 50px;
+    font-size: 22px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0,135,71,0.4);
+    display: none; 
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header">
+        <div class="train-info-block">
+            <div class="train-type">各駅停車</div>
+            <div class="train-no">1234K</div>
+            <div class="car-type">ハエ101</div>
+        </div>
+        <div class="header-center">埼京線乗務支援ナビ</div>
+        <div class="header-right">
+            <div class="speed-block">
+                <div class="speed" id="speed">0 km/h</div>
+                <div class="speed-max">ATC 100 km/h</div>
+            </div>
+            <div class="clock" id="clock">00:00:00</div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="left-column">
+            <div class="route-table-header">
+                <div>種別</div>
+                <div>駅名</div>
+                <div>計画</div>
+                <div>実績</div>
+                <div style="text-align:right;">誤差</div>
+            </div>
+            <div class="route-scroll-area" id="routeTable"></div>
+        </div>
+
+        <div class="right-column">
+            <div class="navi-main-card">
+                <div class="next-station-box">
+                    <div class="next-label">次駅ターゲット</div>
+                    <div class="next-station-flex">
+                        <div class="next-station-name" id="nextStation">--</div>
+                        <div id="nextTypeBadge" class="next-type-badge">停車</div>
+                    </div>
+                </div>
+
+                <div class="navi-metrics">
+                    <div class="metric-box">
+                        <div class="metric-label">残距離</div>
+                        <div class="metric-value" id="distanceView">---</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">到着までの時間</div>
+                        <div class="metric-value" id="etaView">--分--秒</div>
+                    </div>
+                </div>
+
+                <div class="sign-container">
+                    <div class="speed-limit-sign">95</div>
+                    <div class="ats-diamond"><span>P</span></div>
+                    <div class="pattern-sign">車内ATCリンク</div>
+                </div>
+            </div>
+
+            <div class="right-bar-indicator">
+                <div class="indicator-node"></div>
+                <div class="indicator-line"></div>
+                <div class="indicator-fill" id="indicatorFill"></div>
+                <div class="indicator-node active"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="status" id="statusText">システム待機中</div>
+        <div class="button-row">
+            <button class="ctrl-btn btn-green" id="arrivalBtn">到着/運転更新</button>
+            <button class="ctrl-btn btn-orange" id="skipBtn">通過処理</button>
+            <button class="ctrl-btn btn-red" id="announceBtn">手動放送再生</button>
+        </div>
+    </div>
+</div>
+
+<div class="init-screen" id="initScreen">
+    <div style="font-size:22px; font-weight:bold; text-align:center;">
+        NAVIGATION SYSTEM Premium<br>
+        <span style="font-size:14px; color:#00ff66; font-weight:normal; display:block; margin-top:6px;">JR東日本 ATOS交互車内放送 再現版</span>
+    </div>
+    
+    <label class="file-btn" id="fileLabel">
+        スタフCSVファイルを読み込む
+        <input type="file" id="csvFile" accept=".csv" hidden>
+    </label>
+
+    <button class="start-btn" id="startSystemBtn">GPS・音声システムを起動する</button>
+</div>
+
+<script>
+let routeData = [];
+let currentIndex = 0;
+let warned2000 = false;
+let warned500 = false;
+let isFinished = false; 
+
+let currentPosition = { lat: 34.7042, lon: 137.7347 }; 
+let speedHistory = []; 
+let availableVoices = [];
+
+let lastPosition = null;
+let lastTimestamp = null;
+let watchId = null;
+
+let audioCtx = null;
+let ttsUnlocked = false;
+let remainingSecondsCache = 0;
+
+function initVoices() {
+    if (!("speechSynthesis" in window)) return;
+    availableVoices = window.speechSynthesis.getVoices();
+}
+initVoices();
+if ("speechSynthesis" in window) {
+    window.speechSynthesis.onvoiceschanged = initVoices;
+}
+
+setInterval(() => {
+    const now = new Date();
+    document.getElementById("clock").textContent = 
+        `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}:${String(now.getSeconds()).padStart(2,"0")}`;
+
+    if (routeData.length > 0 && !isFinished && currentIndex < routeData.length) {
+        if (remainingSecondsCache > 0) {
+            remainingSecondsCache--; 
+            const displayMins = Math.floor(remainingSecondsCache / 60);
+            const displaySecs = Math.floor(remainingSecondsCache % 60);
+            document.getElementById("etaView").textContent = `${displayMins}分${displaySecs}秒`;
+        } else {
+            document.getElementById("etaView").textContent = "0分0秒";
+        }
+    }
+}, 1000);
+
+document.getElementById("csvFile").addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = evt => {
+        parseCSV(evt.target.result);
+        if (routeData.length === 0) {
+            alert("CSV解析に失敗しました。");
+            return;
+        }
+        
+        currentIndex = 0;
+        isFinished = false;
+        renderTable();
+        updateUI();
+        
+        const target = routeData[0];
+        const dist = calcDistance(currentPosition.lat, currentPosition.lon, target.lat, target.lon);
+        updateDistance(dist);
+        updateRemainingTime(dist, 0);
+
+        document.getElementById("fileLabel").style.display = "none";
+        document.getElementById("startSystemBtn").style.display = "block";
+    };
+    reader.readAsText(file, "UTF-8");
+});
+
+document.getElementById("startSystemBtn").addEventListener("click", () => {
+    ttsUnlocked = true;
+    try {
+        const u = new SpeechSynthesisUtterance("");
+        window.speechSynthesis.speak(u);
+        const AudioContext = window.Object || window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+    } catch(err) {}
+
+    document.getElementById("initScreen").style.display = "none";
+    startGPS();
+    if (routeData.length > 0) {
+        triggerStationAnnounce(routeData[0], "start");
+    }
+});
+
+function parseCSV(text) {
+    const lines = text.split(/\r?\n/);
+    routeData = [];
+    let runningTime = new Date(); 
+
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        const cols = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+        if (cols.length < 6) continue;
+
+        const stationName = cols[0].replace(/^"|"$/g, "").trim();
+        let lat = parseFloat(cols[1]);
+        let lon = parseFloat(cols[2]);
+        const minOffset = parseInt(cols[3]) || 0;
+        const secOffset = parseInt(cols[4]) || 0;
+        const type = cols[5].replace(/^"|"$/g, "").trim();
+        const rawAnnounce = cols[6] ? cols[6].replace(/^"|"$/g, "").trim() : "";
+
+        runningTime.setMinutes(runningTime.getMinutes() + minOffset);
+        runningTime.setSeconds(runningTime.getSeconds() + secOffset);
+        const calculatedPlannedTime = `${String(runningTime.getHours()).padStart(2,"0")}:${String(runningTime.getMinutes()).padStart(2,"0")}:${String(runningTime.getSeconds()).padStart(2,"0")}`;
+
+        let jaText = rawAnnounce;
+        let enText = "";
+        if (rawAnnounce.includes("..")) {
+            const parts = rawAnnounce.split("..");
+            jaText = parts[0].trim();
+            enText = parts[1].trim();
+        }
+
+        routeData.push({
+            station: stationName,
+            lat: lat,
+            lon: lon,
+            time: calculatedPlannedTime, 
+            type: type,
+            japaneseText: jaText,
+            englishText: enText,
+            actualTime: "",
+            diffText: ""
+        });
+    }
+}
+
+function renderTable() {
+    const table = document.getElementById("routeTable");
+    table.innerHTML = ""; 
+
+    routeData.forEach((r, index) => {
+        const row = document.createElement("div");
+        row.className = "route-row";
+
+        if (index === currentIndex && !isFinished) {
+            row.classList.add("route-active");
+        } else if (index < currentIndex || isFinished) {
+            row.classList.add("route-passed");
+        }
+
+        let diffClass = "diff-on-time";
+        if (r.diffText.startsWith("+")) diffClass = "diff-late";
+        else if (r.diffText.startsWith("-")) diffClass = "diff-early";
+
+        const isStop = r.type === "停車";
+        const typeBadgeHtml = `<span class="cell-type-icon ${isStop ? 'type-stop' : 'type-pass'}">${isStop ? '停' : '通'}</span>`;
+
+        row.innerHTML = `
+            <div>${typeBadgeHtml}</div>
+            <div class="cell-station">${r.station}</div>
+            <div class="cell-plan">${r.time}</div>
+            <div class="cell-actual">${r.actualTime ? r.actualTime : "--:--:--"}</div>
+            <div class="cell-diff ${diffClass}">${r.diffText || "--"}</div>
+        `;
+        table.appendChild(row);
+    });
+
+    const activeRow = table.querySelector(".route-active");
+    if (activeRow) {
+        activeRow.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+}
+
+function updateUI() {
+    if (isFinished || currentIndex >= routeData.length) {
+        document.getElementById("nextStation").textContent = "全行程終了";
+        document.getElementById("nextTypeBadge").textContent = "終着";
+        document.getElementById("nextTypeBadge").className = "next-type-badge";
+        document.getElementById("distanceView").textContent = "0.00 km";
+        document.getElementById("etaView").textContent = "0分0秒";
+        document.getElementById("statusText").textContent = "案内を終了しました。";
+        document.getElementById("indicatorFill").style.height = "100%";
+        return;
+    }
+
+    const target = routeData[currentIndex];
+    document.getElementById("nextStation").textContent = target.station;
+    document.getElementById("nextTypeBadge").textContent = target.type;
+    document.getElementById("nextTypeBadge").className = target.type === "通過" ? "next-type-badge badge-pass" : "next-type-badge";
+
+    const progressPercent = (currentIndex / routeData.length) * 100;
+    document.getElementById("indicatorFill").style.height = `${progressPercent}%`;
+}
+
+function startGPS() {
+    if (!navigator.geolocation) {
+        document.getElementById("statusText").textContent = "GPS非対応デバイスです";
+        return;
+    }
+    watchId = navigator.geolocation.watchPosition(gpsSuccess, gpsError, {
+        enableHighAccuracy: true,
+        timeout: 8000,
+        maximumAge: 1000
+    });
+}
+
+function gpsSuccess(pos) {
+    if (isFinished || currentIndex >= routeData.length) return;
+
+    currentPosition.lat = pos.coords.latitude;
+    currentPosition.lon = pos.coords.longitude;
+    let speed = pos.coords.speed;
+
+    if (speed == null && lastPosition) {
+        const moved = calcDistance(lastPosition.lat, lastPosition.lon, currentPosition.lat, currentPosition.lon) * 1000;
+        const timeDiff = (pos.timestamp - lastTimestamp) / 1000;
+        if (timeDiff > 0) speed = moved / timeDiff;
+    }
+    if (!speed || speed < 0) speed = 0;
+
+    speedHistory.push(speed);
+    if (speedHistory.length > 8) speedHistory.shift();
+
+    lastPosition = { lat: currentPosition.lat, lon: currentPosition.lon };
+    lastTimestamp = pos.timestamp;
+
+    const kmh = Math.round(speed * 3.6);
+    document.getElementById("speed").textContent = kmh + " km/h";
+    document.getElementById("statusText").textContent = `高精度GPSリンク中`;
+
+    const target = routeData[currentIndex];
+    const dist = calcDistance(currentPosition.lat, currentPosition.lon, target.lat, target.lon);
+
+    updateDistance(dist);
+    updateRemainingTime(dist, speed); 
+
+    const basePercent = (currentIndex / routeData.length) * 100;
+    const nextSegmentWeight = (1 / routeData.length) * 100;
+    if(dist <= 2.0) {
+        const currentSegmentProgress = ((2.0 - dist) / 2.0) * nextSegmentWeight;
+        document.getElementById("indicatorFill").style.height = `${basePercent + Math.max(0, currentSegmentProgress)}%`;
+    } else {
+        document.getElementById("indicatorFill").style.height = `${basePercent}%`;
+    }
+
+    if (dist <= 2.0 && !warned2000) {
+        warned2000 = true;
+        playBeepAlarm(); 
+        setTimeout(() => { triggerStationAnnounce(target, "approach"); }, 800);
+    }
+
+    if (dist <= 0.5 && !warned500) {
+        warned500 = true;
+        triggerStationAnnounce(target, "soon");
+    }
+}
+
+function gpsError(err) {
+    if (routeData.length > 0 && currentIndex < routeData.length) {
+        const target = routeData[currentIndex];
+        const dist = calcDistance(currentPosition.lat, currentPosition.lon, target.lat, target.lon);
+        updateDistance(dist);
+        updateRemainingTime(dist, 0); 
+    }
+    document.getElementById("statusText").textContent = `GPS信号を検索・待機中...`;
+}
+
+function playBeepAlarm() {
+    if (!audioCtx) return;
+    try {
+        const now = audioCtx.currentTime;
+        [0, 0.15, 0.3].forEach((delay) => {
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(2200, now + delay); 
+            gainNode.gain.setValueAtTime(0.2, now + delay);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + delay + 0.08);
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            osc.start(now + delay);
+            osc.stop(now + delay + 0.08);
+        });
+    } catch(e) {}
+}
+
+/* ==========================================
+   TTS AUDIO SEQUENCE ENGINE (交互再生＆ATOS構文対応)
+   ========================================== */
+function executeTTSChain(phrases) {
+    if (!("speechSynthesis" in window) || phrases.length === 0) return;
+
+    try {
+        window.speechSynthesis.cancel(); // 前の音声をクリア
+    } catch(e) {}
+
+    let index = 0;
+
+    function speakNext() {
+        if (index >= phrases.length) return; // 全アナウンス完了
+
+        const item = phrases[index];
+        const utter = new SpeechSynthesisUtterance(item.text);
+        utter.lang = item.lang;
+
+        if (availableVoices.length === 0) {
+            availableVoices = window.speechSynthesis.getVoices();
+        }
+
+        if (item.lang === "ja-JP") {
+            utter.rate = 1.05;
+            utter.pitch = 1.0;
+            const jaVoice = availableVoices.find(v => v.lang.includes("ja"));
+            if (jaVoice) utter.voice = jaVoice;
+        } else {
+            // おじさん声排除・女性声優先
+            let targetVoice = availableVoices.find(v => {
+                const name = v.name.toLowerCase();
+                return (v.lang.startsWith("en") && 
+                       (name.includes("female") || name.includes("zira") || name.includes("samantha") || name.includes("hazel") || name.includes("google en")));
+            });
+            if (!targetVoice) targetVoice = availableVoices.find(v => v.lang.includes("en-US"));
+            if (!targetVoice) targetVoice = availableVoices.find(v => v.lang.startsWith("en"));
+            
+            if (targetVoice) utter.voice = targetVoice;
+            utter.rate = 0.82;  // ATOS風のゆったりした速度
+            utter.pitch = 1.05; 
+        }
+
+        // このフレーズが読み終わったら、次のフレーズへ移行する
+        utter.onend = () => {
+            index++;
+            setTimeout(speakNext, 400); // 放送の間に少し「余韻（0.4秒）」を作る
+        };
+
+        window.speechSynthesis.speak(utter);
+    }
+
+    speakNext(); // チェーン開始
+}
+
+function triggerStationAnnounce(target, phase) {
+    if (!target || isFinished) return;
+    
+    let announcePlaylist = [];
+
+    // 1. 駅出発直後（スタート時）
+    if (phase === "start") {
+        if (target.japaneseText) {
+            announcePlaylist.push({ text: target.japaneseText, lang: "ja-JP" });
+        }
+        executeTTSChain(announcePlaylist);
+        return;
+    }
+    
+    // 2. 駅接近時（2km手前）: 【日本語 ➔ 英語（ATOS構文）】
+    if (phase === "approach") {
+        // 日本語
+        let jaText = `次は、${target.station}、です。`;
+        if (target.type === "停車") jaText = `次は、${target.station}、に停車します。`;
+        else if (target.type === "通過") jaText = `次は、${target.station}、を通過します。`;
+        announcePlaylist.push({ text: jaText, lang: "ja-JP" });
+
+        // 英語（JR東日本あるある構文の自動組み立て）
+        let enText = `The next station is ${target.station}.`;
+        
+        // 次の次の駅が存在するかチェック
+        if (currentIndex + 1 < routeData.length) {
+            const nextNextTarget = routeData[currentIndex + 1];
+            // "We will stop at [新宿] after [中野]." の形式
+            enText += ` We will stop at ${nextNextTarget.station} after ${target.station}.`;
+        } else {
+            // 次が終点の場合
+            enText += ` This is the final station of this line.`;
+        }
+        announcePlaylist.push({ text: enText, lang: "en-US" });
+    } 
+    
+    // 3. まもなく到着時（500m手前）: 【日本語 ➔ 英語】
+    else if (phase === "soon") {
+        let jaText = `まもなく、${target.station}、です。`;
+        if (target.type === "通過") jaText = `まもなく、${target.station}、を通過します。`;
+        announcePlaylist.push({ text: jaText, lang: "ja-JP" });
+
+        let enText = `We will soon arrive at ${target.station}.`;
+        announcePlaylist.push({ text: enText, lang: "en-US" });
+    }
+
+    // 交互自動再生を実行
+    executeTTSChain(announcePlaylist);
+}
+
+function updateDistance(dist) {
+    document.getElementById("distanceView").textContent = 
+        dist >= 1 ? dist.toFixed(2) + " km" : Math.round(dist * 1000) + " m";
+}
+
+function updateRemainingTime(dist, speed) {
+    let targetSpeed = speed;
+    if (speed <= 0.5) {
+        let avgSpeed = speedHistory.reduce((a,b) => a+b, 0) / speedHistory.length;
+        if (!avgSpeed || avgSpeed < 1.5) {
+            targetSpeed = 60 / 3.6; 
+        } else {
+            targetSpeed = avgSpeed;
+        }
+    }
+
+    const totalSeconds = (dist * 1000) / targetSpeed;
+    if (totalSeconds <= 0 || isNaN(totalSeconds) || !isFinite(totalSeconds)) {
+        remainingSecondsCache = 0;
+        document.getElementById("etaView").textContent = "0分0秒";
+        return;
+    }
+
+    remainingSecondsCache = Math.floor(totalSeconds);
+    const displayMins = Math.floor(remainingSecondsCache / 60);
+    const displaySecs = Math.floor(remainingSecondsCache % 60);
+    document.getElementById("etaView").textContent = `${displayMins}分${displaySecs}秒`;
+}
+
+function calcDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function calculateTimeDifference(plannedStr, actualStr) {
+    const now = new Date();
+    const p = plannedStr.split(":").map(Number);
+    const a = actualStr.split(":").map(Number);
+    const pDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), p[0], p[1], p[2]);
+    const aDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), a[0], a[1], a[2]);
+
+    let diff = Math.round((aDate - pDate) / 1000);
+    if (diff === 0) return "±0s";
+    const sign = diff > 0 ? "+" : "-";
+    diff = Math.abs(diff);
+
+    if (diff < 60) return `${sign}${diff}s`;
+    const mins = Math.floor(diff / 60);
+    const secs = diff % 60;
+    return secs === 0 ? `${sign}${mins}m` : `${sign}${mins}m${secs}s`;
+}
+
+function processManualEvent() {
+    if (isFinished || currentIndex >= routeData.length) return;
+
+    const target = routeData[currentIndex];
+    const actual = `${String(new Date().getHours()).padStart(2,"0")}:${String(new Date().getMinutes()).padStart(2,"0")}:${String(new Date().getSeconds()).padStart(2,"0")}`;
+
+    target.actualTime = actual;
+    target.diffText = calculateTimeDifference(target.time, actual);
+
+    if (currentIndex === routeData.length - 1) {
+        isFinished = true;
+        renderTable();
+        updateUI();
+        try { window.speechSynthesis.cancel(); } catch(e) {}
+        executeTTSChain([{ text: "全行程の運転が終了しました。お疲れ様でした。", lang: "ja-JP" }]);
+        return;
+    }
+
+    currentIndex++;
+    warned2000 = false;
+    warned500 = false;
+
+    renderTable();
+    updateUI();
+    
+    const nextTarget = routeData[currentIndex];
+    const dist = calcDistance(currentPosition.lat, currentPosition.lon, nextTarget.lat, nextTarget.lon);
+    updateDistance(dist);
+    updateRemainingTime(dist, 0);
+
+    if (currentIndex < routeData.length) {
+        triggerStationAnnounce(routeData[currentIndex], "approach");
+    }
+}
+
+document.getElementById("arrivalBtn").addEventListener("click", processManualEvent);
+document.getElementById("skipBtn").addEventListener("click", processManualEvent);
+document.getElementById("announceBtn").addEventListener("click", () => {
+    if (isFinished || currentIndex >= routeData.length) return;
+    triggerStationAnnounce(routeData[currentIndex], "approach");
+});
+</script>
+</body>
+</html>
