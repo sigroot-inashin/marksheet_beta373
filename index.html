@@ -3,604 +3,802 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>乗務支援システム - INTEROS INTEGRATED MONITOR</title>
+<title>乗務員支援システム - DIGITAL TRAIN DIAL</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Changa+One&family=Noto+Sans+JP:wght=700;900&display=swap');
+
 :root {
-    --bg-main: #07090e;
-    --bg-panel: #11141c;
-    --bg-panel-header: #1a1f2c;
-    --border-color: #2e3748;
-    --border-highlight: #4a576e;
-    --neon-green: #00ff66;
-    --neon-red: #ff3b30;
-    --neon-orange: #ff9f0a;
-    --neon-blue: #0080ff;
-    --text-primary: #ffffff;
-    --text-secondary: #8e9aaf;
+    --bg-base: #000000;       
+    --bg-card: #111111;       
+    --bg-header: #222222;     
+    --border-flat: #2a2a2a;   
+    
+    --rail-white: #ffffff;
+    --rail-green: #00ff66;    
+    --rail-yellow: #ffcc00;   
+    --rail-red: #ff3333;      
+    --text-muted: #555555;    
+    
+    --color-special-rapid: #0054a6;   
+    --color-rapid: #f15a24;           
+    --color-commuter-rapid: #e60012;  
+    --color-semi-rapid: #00a651;      
+    --color-local: #00a0e9;           
+    --color-ltd-exp: #a61414;         
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body {
     width: 100%;
     height: 100%;
-    background: var(--bg-main); 
-    color: var(--text-primary);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg-base); 
+    color: var(--rail-white);
+    font-family: 'Noto Sans JP', -apple-system, sans-serif;
     -webkit-user-select: none;
     user-select: none;
     overflow: hidden;
 }
 
-.app-container {
+.app-wrapper {
     display: flex;
     flex-direction: column;
     width: 100%;
     height: 100%;
     padding: 6px;
     gap: 6px;
-    background: radial-gradient(circle at center, #10141d 0%, #030406 100%);
 }
 
-.header {
-    height: 56px;
+.top-bar {
+    height: 44px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-flat);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: linear-gradient(180deg, #1f2535 0%, #131722 100%);
-    border: 1px solid var(--border-color);
-    padding: 0 16px;
-    border-radius: 4px;
-    flex-shrink: 0;
+    padding: 0 12px;
+    border-radius: 2px;
 }
-.header-left { display: flex; align-items: center; gap: 12px; }
-.const-label { background: var(--neon-blue); color: #ffffff; font-size: 11px; font-weight: 800; padding: 4px 8px; border-radius: 3px; }
-.train-box { color: var(--neon-green); font-size: 24px; font-weight: 900; font-family: monospace; letter-spacing: 1.5px; }
-.header-center { font-size: 15px; font-weight: 700; letter-spacing: 6px; color: #cbd5e1; }
-.clock { font-size: 28px; font-weight: 700; font-family: monospace; }
+.train-meta { display: flex; align-items: center; gap: 12px; }
+.status-badge { background: #0054a6; color: #fff; font-size: 11px; font-weight: 900; padding: 2px 6px; border-radius: 1px; }
+.train-id { font-family: 'Consolas', monospace; font-size: 22px; font-weight: 900; color: var(--rail-green); }
+.system-title { font-size: 12px; font-weight: 900; color: var(--text-muted); letter-spacing: 2px; }
+.live-clock { font-family: 'Consolas', monospace; font-size: 24px; font-weight: bold; color: var(--rail-white); }
 
-.main-content { 
-    flex: 1; 
-    display: flex; 
-    gap: 6px; 
-    overflow: hidden; 
-}
-
-/* 左側：電子スタフ */
-.staf-container { 
-    width: 48%; 
-    display: flex; 
-    flex-direction: column; 
-    background: var(--bg-panel); 
-    border: 1px solid var(--border-color); 
-    border-radius: 4px;
+.main-grid {
+    flex: 1;
+    display: flex;
+    gap: 6px;
     overflow: hidden;
 }
-.staf-header { 
-    display: grid; 
-    grid-template-columns: 55px 1fr 95px 95px 100px; 
-    padding: 10px 6px; 
-    background: var(--bg-panel-header); 
-    font-size: 11px; 
-    color: var(--text-secondary); 
-    font-weight: 700; 
-    border-bottom: 1px solid var(--border-highlight);
-    text-align: center;
-}
-.staf-header > div:nth-child(2) { text-align: left; padding-left: 12px; }
 
-.staf-scroll-area { flex: 1; overflow-y: auto; background: #0b0d12; }
-.staf-row { 
-    display: grid; 
-    grid-template-columns: 55px 1fr 95px 95px 100px; 
-    padding: 12px 6px; 
-    align-items: center; 
-    border-bottom: 1px solid #161a24; 
-    font-size: 15px; 
-    font-family: monospace; 
-    color: #cbd5e1; 
-}
-.staf-station { font-weight: 700; color: #ffffff; padding-left: 12px; font-family: sans-serif; font-size: 16px; }
-
-.type-indicator { text-align: center; font-weight: 900; font-size: 11px; padding: 3px 0; border-radius: 3px; width: 42px; margin: 0 auto; }
-.type-indicator.stop { background: var(--neon-red); color: #ffffff; }
-.type-indicator.pass { background: var(--neon-orange); color: #000000; }
-.staf-row.pass-row .staf-station { color: #ffbc42; }
-
-.staf-time { text-align: center; font-weight: 700; color: #ffffff; }
-.staf-actual { text-align: center; color: #4a576e; font-weight: 700; }
-.staf-diff { text-align: right; font-weight: 700; padding-right: 10px; font-size: 14px; }
-
-.staf-row.active { 
-    background: linear-gradient(90deg, #072c1a 0%, #11141c 100%); 
-    box-shadow: inset 3px 0 0 var(--neon-green);
-}
-.staf-row.active .staf-station { color: var(--neon-green) !important; text-shadow: 0 0 8px rgba(0,255,102,0.3); }
-.staf-row.active .staf-time { color: var(--neon-green); }
-.staf-row.active .staf-actual { color: #ffffff; }
-
-/* 右側：ナビゲーションパネル */
-.navi-container { 
-    width: 52%; 
-    display: flex; 
-    flex-direction: column; 
-    gap: 6px; 
-}
-.target-box { 
-    height: 110px;
-    background: var(--bg-panel); 
-    border: 1px solid var(--border-color); 
-    border-radius: 4px;
-    padding: 14px 20px; 
+.staf-panel {
+    width: 53%;
+    background: var(--bg-card);
+    border: 1px solid var(--border-flat);
+    border-radius: 2px;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    overflow: hidden;
 }
-.target-label { 
-    font-size: 11px; 
-    color: var(--neon-green); 
-    letter-spacing: 3px; 
-    font-weight: 800;
-    border-left: 4px solid var(--neon-green);
-    padding-left: 8px;
+.staf-thead {
+    display: grid;
+    grid-template-columns: 100px 65px 1fr 75px 75px 80px 55px;
+    background: var(--bg-header);
+    padding: 6px 4px;
+    font-size: 11px;
+    color: #aaa;
+    font-weight: 900;
+    text-align: center;
+    border-bottom: 1px solid var(--border-flat);
 }
-.target-main { display: flex; justify-content: space-between; align-items: center; }
-.target-name { font-size: 48px; font-weight: 900; color: #ffffff; }
-.target-type-frame { border: 2px solid #ffffff; padding: 4px 16px; font-size: 20px; font-weight: 900; border-radius: 3px; }
-.target-type-frame.stop { border-color: var(--neon-red); color: var(--neon-red); background: rgba(255,59,48,0.1); }
-.target-type-frame.pass { border-color: var(--neon-orange); color: var(--neon-orange); background: rgba(255,159,10,0.1); }
+.staf-thead > div:nth-child(3) { text-align: left; padding-left: 12px; }
 
-/* 車内案内表示エリア */
-.announcement-box {
-    flex: 1;
-    background: #090b10;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    padding: 12px 16px;
+.staf-tbody { flex: 1; overflow-y: auto; background: #050505; }
+.staf-row {
+    display: grid;
+    grid-template-columns: 100px 65px 1fr 75px 75px 80px 55px;
+    padding: 4px 4px;
+    align-items: center;
+    border-bottom: 1px solid #151515;
+    height: 52px;
+    transition: all 0.2s ease;
+}
+.staf-station-name { font-size: 17px; font-weight: 900; color: var(--rail-white); padding-left: 12px; }
+.staf-time-cell { text-align: center; font-family: 'Consolas', monospace; font-size: 14px; color: #ffffff; }
+.staf-actual-cell { text-align: center; font-family: 'Consolas', monospace; font-size: 14px; color: #444; }
+.staf-diff-cell { text-align: right; font-family: 'Consolas', monospace; font-size: 13px; font-weight: 700; padding-right: 8px; }
+
+.status-led-badge {
+    font-size: 11px;
+    font-weight: 900;
+    text-align: center;
+    padding: 3px 0;
+    border-radius: 2px;
+    letter-spacing: 1px;
+    line-height: 1;
+}
+.status-led-badge.stop {
+    background: rgba(0, 255, 102, 0.15);
+    color: var(--rail-green);
+    border: 1px solid rgba(0, 255, 102, 0.4);
+}
+.status-led-badge.pass {
+    background: rgba(241, 90, 36, 0.1);
+    color: #f15a24;
+    border: 1px solid rgba(241, 90, 36, 0.3);
+}
+
+.staf-row.active {
+    background: #061f0e !important;
+    box-shadow: inset 4px 0 0 var(--rail-green);
+    opacity: 1.0 !important;
+}
+.staf-row.active .staf-station-name { color: var(--rail-green); }
+.staf-row.active:not(.is-pass-station) .staf-time-cell { color: var(--rail-green); font-weight: 700; }
+
+.staf-row.is-pass-station {
+    background: #040404;
+    opacity: 0.4;
+}
+.staf-row.is-pass-station .staf-station-name { color: #555555; font-weight: 700; }
+.staf-row.is-pass-station .staf-time-cell { 
+    color: #443c28; 
+    font-size: 16px; 
+    font-weight: 900;
+}
+
+.control-panel {
+    width: 47%;
     display: flex;
     flex-direction: column;
     gap: 6px;
-    box-shadow: inset 0 2px 6px rgba(0,0,0,0.8);
 }
-.announcement-label { font-size: 10px; color: var(--neon-blue); font-weight: 800; letter-spacing: 2px; }
-.announcement-text { font-size: 16px; font-weight: 700; color: #e2e8f0; line-height: 1.5; word-break: break-all; overflow-y: auto; }
 
-/* 速度計計器 */
-.instrument-panel {
-    height: 90px;
-    background: var(--bg-panel);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    padding: 10px 20px;
+.next-target-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-flat);
+    border-radius: 2px;
+    padding: 12px 16px;
     display: flex;
-    align-items: center;
-    gap: 24px;
+    flex-direction: column;
+    gap: 12px;
 }
-.speed-digital { width: 130px; text-align: right; line-height: 0.9; }
-.speed-num { font-size: 48px; font-weight: 900; font-family: monospace; color: #ffffff; }
-.speed-unit { font-size: 12px; color: var(--text-secondary); font-weight: 700; }
+.card-label { font-size: 10px; color: var(--rail-green); font-weight: 900; letter-spacing: 1px; }
+.target-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.target-station-display { font-size: 42px; font-weight: 900; color: var(--rail-white); flex: 1; }
 
-.meter-bar-container { flex: 1; height: 36px; background: #0b0d12; border: 1px solid var(--border-highlight); border-radius: 3px; position: relative; overflow: hidden; }
-.meter-bar-container::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 10% 100%; z-index: 1; }
-.meter-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #006622 0%, var(--neon-green) 100%); transition: width 0.25s ease; }
-.meter-scale-95 { position: absolute; left: 79%; top: 0; bottom: 0; width: 2px; background: var(--neon-red); z-index: 2; }
-.meter-scale-label { position: absolute; left: 75%; bottom: 4px; font-size: 10px; color: var(--neon-red); font-weight: 900; z-index: 3; }
-
-.ats-status-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-.ats-lamp { background: #151922; border: 1px solid #252d3d; border-radius: 3px; padding: 10px 0; text-align: center; font-size: 12px; font-weight: 700; color: #3a4659; }
-.ats-lamp.active-green { background: #043818; color: var(--neon-green); border-color: var(--neon-green); }
-.ats-lamp.active-orange { background: #3d2403; color: var(--neon-orange); border-color: var(--neon-orange); }
-
-/* 下部コントロール */
-.footer-controls { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
-.status-bar { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 3px; padding: 6px 12px; font-size: 12px; color: var(--text-secondary); font-family: monospace; }
-.btn-row { display: flex; gap: 6px; }
-.action-btn { flex: 1; height: 52px; border: 1px solid transparent; border-radius: 4px; font-size: 15px; font-weight: 700; cursor: pointer; color: #ffffff; transition: all 0.1s ease; -webkit-tap-highlight-color: transparent; }
-.btn-arrival { background: linear-gradient(180deg, #1d4ed8 0%, #1e40af 100%); border-color: #3b82f6; }
-.btn-arrival:active { background: #3b82f6; transform: translateY(1px); }
-.btn-skip { background: linear-gradient(180deg, #b45309 0%, #78350f 100%); border-color: var(--neon-orange); }
-.btn-skip:active { background: var(--neon-orange); color: #000; transform: translateY(1px); }
-.btn-announce { background: linear-gradient(180deg, #2e3748 0%, #1a1f2c 100%); border-color: var(--border-highlight); }
-.btn-announce:active { background: var(--border-highlight); transform: translateY(1px); }
-
-/* 起動用オーバーレイ画面 */
-.init-screen { position: fixed; inset: 0; background: #07090e; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 20px; }
-.init-title { font-size: 24px; font-weight: 900; text-align: center; letter-spacing: 3px; line-height: 1.6; }
-.init-box-layout { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 380px; }
-
-/* 【修正】文字コードを手動選択できる安全スイッチ */
-.encoding-selector {
+.jr-sign-container {
     display: flex;
-    justify-content: space-around;
-    background: #11141c;
-    padding: 12px;
-    border-radius: 4px;
-    border: 1px solid var(--border-color);
-    font-size: 13px;
-    font-weight: 700;
+    flex-direction: column;
+    background: #000000;
+    border: 1px solid #333333;
+    overflow: hidden;
+    position: relative;
 }
-.encoding-selector label { cursor: pointer; display: flex; align-items: center; gap: 6px; }
+.jr-sign-top { display: flex; align-items: center; background: #000000; flex: 1; }
+.jr-sign-symbol {
+    color: #ffffff; font-weight: 900; font-family: 'Arial', sans-serif;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.jr-sign-jp-box { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; }
+.jr-sign-jp {
+    font-weight: 900; font-family: 'Noto Sans JP', sans-serif;
+    display: inline-block; transform: skewX(-13deg); line-height: 1; white-space: nowrap; text-align: center;
+}
+.jr-sign-en {
+    color: #ffffff; font-family: 'Arial', sans-serif; font-weight: 700; text-align: center;
+    white-space: nowrap; display: flex; align-items: center; justify-content: center;
+}
 
-.file-btn { background: #1a1f2c; border: 1px solid var(--border-highlight); color: #ffffff; padding: 18px; font-size: 15px; font-weight: 700; cursor: pointer; text-align: center; border-radius: 4px; }
-.start-active-btn { background: linear-gradient(180deg, #056a28 0%, #03481b 100%); border: 1px solid var(--neon-green); color: var(--neon-green); padding: 18px; font-size: 16px; font-weight: 900; cursor: pointer; text-align: center; border-radius: 4px; display: none; }
+.jr-sign-container.large { width: 210px; height: 72px; border-radius: 2px; }
+.jr-sign-container.large .jr-sign-symbol { width: 44px; height: 48px; font-size: 32px; }
+.jr-sign-container.large .jr-sign-jp { font-size: 32px; letter-spacing: -1px; }
+.jr-sign-container.large .jr-sign-en { height: 20px; font-size: 11px; }
 
-@media (max-width: 1024px) {
-    .main-content { flex-direction: column; gap: 6px; }
-    .navi-container { width: 100%; order: 1; }
-    .staf-container { width: 100%; order: 2; flex: 1; min-height: 220px; }
-    .target-box { padding: 10px 16px; height: 85px; }
-    .target-name { font-size: 36px; }
-    .action-btn { height: 46px; font-size: 14px; }
-    .staf-header, .staf-row { grid-template-columns: 55px 1fr 85px 85px 90px; font-size: 14px; }
+.jr-sign-container.small { width: 92px; height: 36px; border-radius: 1px; }
+.jr-sign-container.small .jr-sign-symbol { width: 22px; height: 24px; font-size: 15px; }
+.jr-sign-container.small .jr-sign-jp { font-size: 15px; letter-spacing: -0.5px; }
+.jr-sign-container.small .jr-sign-en { height: 10px; font-size: 6.5px; font-weight: 900; }
+
+.theme-special-rapid { --jr-color: var(--color-special-rapid); }
+.theme-rapid { --jr-color: var(--color-rapid); }
+.theme-commuter-rapid { --jr-color: var(--color-commuter-rapid); }
+.theme-semi-rapid { --jr-color: var(--color-semi-rapid); }
+.theme-local { --jr-color: var(--color-local); }
+.theme-ltd-exp { --jr-color: var(--color-ltd-exp); }
+.theme-terminal { --jr-color: #333333; }
+
+.jr-sign-symbol { background: var(--jr-color); }
+.jr-sign-jp { color: var(--jr-color); }
+.jr-sign-en { background: var(--jr-color); }
+.no-symbol .jr-sign-symbol { display: none !important; }
+
+.jr-sign-container.pass-blackout { border-color: #222222; }
+.jr-sign-container.pass-blackout .jr-sign-symbol { background: #202020; color: #444; position: relative; }
+.jr-sign-container.pass-blackout .jr-sign-symbol::after {
+    content: ""; position: absolute; width: 100%; height: 2px; background: #333; transform: rotate(45deg);
+}
+.jr-sign-container.pass-blackout .jr-sign-jp { color: #333333; }
+.jr-sign-container.pass-blackout .jr-sign-en { background: #151515; color: #333333; }
+
+.info-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+}
+.strip-item { background: #0a0a0a; border: 1px solid var(--border-flat); padding: 8px; border-radius: 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.strip-label { font-size: 10px; color: #666; font-weight: 800; margin-bottom: 2px; }
+.strip-value { font-size: 16px; font-weight: 900; }
+
+.jr-diamond-box {
+    position: relative; width: 36px; height: 36px; background: #ffffff;
+    border: 3px solid #000000; transform: rotate(45deg);
+    display: flex; align-items: center; justify-content: center;
+}
+.jr-diamond-box span { transform: rotate(-45deg); font-size: 18px; font-weight: 900; color: #000000; font-family: 'Arial', sans-serif; }
+
+.broadcast-card {
+    flex: 1; background: #050505; border: 1px solid var(--border-flat); border-radius: 2px; padding: 12px;
+    display: flex; flex-direction: column; gap: 6px;
+}
+.broadcast-text { font-size: 14px; font-weight: 700; color: #aaaaaa; line-height: 1.5; overflow-y: auto; }
+
+.meter-card {
+    height: 68px; background: var(--bg-card); border: 1px solid var(--border-flat); border-radius: 2px;
+    display: flex; align-items: center; padding: 0 16px; gap: 16px;
+}
+.speed-group { width: 100px; text-align: right; }
+.speed-digits { font-family: 'Changa One', monospace; font-size: 38px; line-height: 1; color: #fff; }
+.speed-unit { font-size: 10px; color: var(--text-muted); font-weight: 700; }
+.bar-track { flex: 1; height: 18px; background: #050505; border: 1px solid #222; position: relative; overflow: hidden; }
+.bar-fill { height: 100%; width: 0%; background: var(--rail-green); transition: width 0.1s linear; }
+.scale-red-line { position: absolute; left: 80%; top: 0; bottom: 0; width: 2px; background: var(--rail-red); }
+
+.bottom-actions { display: flex; flex-direction: column; gap: 4px; }
+.console-log { background: #050505; border: 1px solid var(--border-flat); padding: 6px 12px; font-family: monospace; font-size: 11px; color: #666; }
+.button-group { display: flex; gap: 6px; }
+.btn-core.arrival { flex: 2.5; height: 60px; font-size: 18px; background: #0054a6; border-bottom: 4px solid #003366; }
+.btn-core.arrival:active { background: #004488; transform: translateY(2px); border-bottom-width: 2px; }
+.btn-core.skip { flex: 1; height: 60px; background: #994500; }
+.btn-core.repeat { flex: 1; height: 60px; background: #222222; border: 1px solid #333; }
+.btn-core {
+    border: none; border-radius: 2px; font-size: 14px; font-weight: 900; cursor: pointer; color: #ffffff;
+    display: flex; align-items: center; justify-content: center;
+}
+
+.modal-overlay { position: fixed; inset: 0; background: #000000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; }
+.modal-window { width: 100%; max-width: 460px; background: var(--bg-card); border: 1px solid var(--border-flat); padding: 24px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 0 20px rgba(0,84,166,0.2); }
+.modal-title { font-size: 18px; font-weight: 900; text-align: center; letter-spacing: 1px; color: #fff; border-bottom: 1px solid var(--border-flat); padding-bottom: 10px; }
+.group-title { font-size: 11px; color: #00a0e9; font-weight: 900; letter-spacing: 1px; margin-bottom: -6px; }
+
+.selector-row { display: flex; justify-content: space-around; background: #050505; padding: 6px; border: 1px solid var(--border-flat); font-size: 13px; font-weight: 700; gap: 4px; }
+.selector-row label { flex: 1; text-align: center; padding: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; background: #111; border: 1px solid #222; }
+
+.jr-type-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: #050505; padding: 8px; border: 1px solid var(--border-flat); list-style: none; }
+.jr-type-list li { position: relative; }
+.jr-type-list input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+.type-tile { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 48px; background: #141414; border: 1px solid #333333; color: #888888; font-weight: 900; font-size: 14px; cursor: pointer; transition: all 0.15s ease; }
+.type-tile .tile-en { font-size: 7.5px; font-family: sans-serif; font-weight: 700; margin-top: 2px; opacity: 0.6; }
+.type-tile:hover { background: #1c1c1c; color: #bbb; }
+
+input[value="普通"]:checked + .type-tile { background: var(--color-local); color: #fff; border-color: #fff; }
+input[value="区間快速"]:checked + .type-tile { background: var(--color-semi-rapid); color: #fff; border-color: #fff; }
+input[value="快速"]:checked + .type-tile { background: var(--color-rapid); color: #fff; border-color: #fff; }
+input[value="通勤快速"]:checked + .type-tile { background: var(--color-commuter-rapid); color: #fff; border-color: #fff; }
+input[value="新快速"]:checked + .type-tile { background: var(--color-special-rapid); color: #fff; border-color: #fff; }
+input[value="特急"]:checked + .type-tile { background: var(--color-ltd-exp); color: #fff; border-color: #fff; }
+
+.upload-label { background: #1a1a1a; border: 1px solid #333; text-align: center; padding: 12px; font-weight: 700; cursor: pointer; display: block; font-size: 13px; }
+.btn-trigger { background: var(--rail-green); color: #000; padding: 12px; font-size: 15px; font-weight: 900; border: none; cursor: pointer; width: 100%; text-align: center; }
+
+@media (max-width: 768px) {
+    html, body { overflow-y: auto; }
+    .app-wrapper { height: auto; gap: 4px; }
+    .top-bar { flex-direction: column; height: auto; padding: 6px; gap: 4px; }
+    .main-grid { flex-direction: column; height: auto; }
+    .staf-panel, .control-panel { width: 100%; }
+    .staf-tbody { max-height: 260px; }
+    .button-group { flex-direction: column; }
+    .btn-core { height: 50px; width: 100%; }
 }
 </style>
 </head>
 <body>
 
-<div class="app-container">
-    <div class="header">
-        <div class="header-left">
-            <span class="const-label">支援有効</span>
-            <div class="train-box">1104G</div>
+<div class="app-wrapper">
+    <div class="top-bar">
+        <div class="train-meta">
+            <span class="status-badge">支援システム稼働</span>
+            <div class="train-id" id="uiTrainId">------</div>
         </div>
-        <div class="header-center">INTEROS ADVANCED MONITOR</div>
-        <div class="header-right"><div class="clock" id="clock">00:00:00</div></div>
+        <div class="system-title">MONITOR INTEGRATED SYSTEM</div>
+        <div class="live-clock" id="liveClock">00:00:00</div>
     </div>
 
-    <div class="main-content">
-        <div class="staf-container">
-            <div class="staf-header">
-                <div>種別</div><div>駅名</div><div>定刻(秒)</div><div>実績(秒)</div><div>早晩(秒補正)</div>
+    <div class="main-grid">
+        <div class="staf-panel">
+            <div class="staf-thead">
+                <div>種別</div><div>状態</div><div>駅名</div><div>着時刻</div><div>発時刻</div><div>実績</div><div>早晩</div>
             </div>
-            <div class="staf-scroll-area" id="stafTable"></div>
+            <div class="staf-tbody" id="stafRowsContainer"></div>
         </div>
 
-        <div class="navi-container">
-            <div class="target-box">
-                <div class="target-label">NEXT STATION TARGET</div>
-                <div class="target-main">
-                    <div class="target-name" id="nextStation">--</div>
-                    <div class="target-type-frame" id="nextTypeBadge">--</div>
+        <div class="control-panel">
+            <div class="next-target-card">
+                <span class="card-label" id="uiNextLabel">▼ NEXT STATION</span>
+                <div class="target-row">
+                    <div class="target-station-display" id="uiNextStation">--</div>
+                    <div id="uiNextBadgeSlot"></div>
+                </div>
+                
+                <div class="info-strip">
+                    <div class="strip-item">
+                        <span class="strip-label">計画最高速度</span>
+                        <span class="strip-value" id="uiTargetSpeed">--</span>
+                    </div>
+                    <div class="strip-item">
+                        <span class="strip-label">停止目標(両数)</span>
+                        <div id="uiStopMarkerSlot"></div>
+                    </div>
+                    <div class="strip-item">
+                        <span class="strip-label">開扉出口</span>
+                        <span class="strip-value" id="uiDoorSide" style="color:var(--rail-yellow)">--</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="announcement-box">
-                <div class="announcement-label">INFORMATION DISPLAY</div>
-                <div class="announcement-text" id="announcementText">案内放送データがここに表示されます。</div>
+            <div class="broadcast-card">
+                <span class="card-label" style="color: #0054a6">▼ INFORMATION</span>
+                <div class="broadcast-text" id="uiBroadcastText">CSVデータを読み込むと、ここに案内テキストが展開されます。</div>
             </div>
 
-            <div class="instrument-panel">
-                <div class="speed-digital"><div class="speed-num" id="speed">0</div><div class="speed-unit">km/h</div></div>
-                <div class="meter-bar-container">
-                    <div class="meter-scale-95"></div><div class="meter-scale-label">95</div>
-                    <div class="meter-bar-fill" id="speedBar"></div>
+            <div class="meter-card">
+                <div class="speed-group">
+                    <div class="speed-digits" id="uiSpeedDigit">0</div>
+                    <div class="speed-unit">km/h</div>
                 </div>
-            </div>
-
-            <div class="ats-status-grid">
-                <div class="ats-lamp active-green">ATS-P</div>
-                <div class="ats-lamp" id="lampPattern">パターン</div>
-                <div class="ats-lamp active-green">B-解放</div>
-                <div class="ats-lamp active-green">ドア閉</div>
+                <div class="bar-track">
+                    <div class="scale-red-line"></div>
+                    <div class="bar-fill" id="uiSpeedBar"></div>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="footer-controls">
-        <div class="status-bar" id="statusText">SYSTEM READY</div>
-        <div class="btn-row">
-            <button class="action-btn btn-arrival" id="arrivalBtn">到着 / 進捗更新 (秒単位計測)</button>
-            <button class="action-btn btn-skip" id="skipBtn">当駅通過</button>
-            <button class="action-btn btn-announce" id="announceBtn">直近放送リピート</button>
+    <div class="bottom-actions">
+        <div class="console-log" id="uiLogText">SYSTEM ACTIVE / READY</div>
+        <div class="button-group">
+            <button class="btn-core repeat" id="btnRepeat">直近放送リピート</button>
+            <button class="btn-core skip" id="btnSkip">当駅通過</button>
+            <button class="btn-core arrival" id="btnArrival">到着 / 進捗更新</button>
         </div>
     </div>
 </div>
 
-<div class="init-screen" id="initScreen">
-    <div class="init-title">
-        乗務支援ナビゲーションシステム<br>
-        <span style="color:var(--neon-green); font-size: 14px; font-weight: 800; letter-spacing: 2px;">INTEROS MANAGEMENT SYSTEM</span>
-    </div>
-    <div class="init-box-layout">
+<div class="modal-overlay" id="initModal">
+    <div class="modal-window">
+        <div class="modal-title">運行条件設定</div>
         
-        <div class="encoding-selector">
-            <label><input type="radio" name="encodingSelect" value="utf-8" checked> UTF-8 (一般的なファイル)</label>
-            <label><input type="radio" name="encodingSelect" value="shift-jis"> Shift_JIS (Excel直出力)</label>
+        <div class="group-title">1. 文字コード</div>
+        <div class="selector-row">
+            <label><input type="radio" name="enc" value="utf-8" checked> UTF-8</label>
+            <label><input type="radio" name="enc" value="shift-jis"> Shift_JIS</label>
         </div>
 
-        <label class="file-btn">
-            カスタムスタフCSVファイルを読込
-            <input type="file" id="csvFile" accept=".csv" hidden>
+        <div class="group-title">2. 列車種別選択（インパネ直感型）</div>
+        <ul class="jr-type-list">
+            <li>
+                <input type="radio" name="typ" value="普通" id="t-local" checked>
+                <label for="t-local" class="type-tile"><div>普通</div><div class="tile-en">Local</div></label>
+            </li>
+            <li>
+                <input type="radio" name="typ" value="区間快速" id="t-semi">
+                <label for="t-semi" class="type-tile"><div>区間快速</div><div class="tile-en">Regional Rapid</div></label>
+            </li>
+            <li>
+                <input type="radio" name="typ" value="快速" id="t-rapid">
+                <label for="t-rapid" class="type-tile"><div>快速</div><div class="tile-en">Rapid Service</div></label>
+            </li>
+            <li>
+                <input type="radio" name="typ" value="通勤快速" id="t-commuter">
+                <label for="t-commuter" class="type-tile"><div>通勤快速</div><div class="tile-en">Commuter Rapid</div></label>
+            </li>
+            <li>
+                <input type="radio" name="typ" value="新快速" id="t-special">
+                <label for="t-special" class="type-tile"><div>新快速</div><div class="tile-en">Special Rapid</div></label>
+            </li>
+            <li>
+                <input type="radio" name="typ" value="特急" id="t-express">
+                <label for="t-express" class="type-tile"><div>特急</div><div class="tile-en">Ltd. Express</div></label>
+            </li>
+        </ul>
+
+        <div class="group-title">3. 組成両数</div>
+        <div class="selector-row">
+            <label><input type="radio" name="cars" value="4"> 4両</label>
+            <label><input type="radio" name="cars" value="6"> 6両</label>
+            <label><input type="radio" name="cars" value="8" checked> 8両</label>
+            <label><input type="radio" name="cars" value="12"> 12両</label>
+        </div>
+
+        <div class="group-title">4. タイムテーブル読込</div>
+        <label class="upload-label">
+            カスタムスタフCSVファイルを選択
+            <input type="file" id="inputCsv" accept=".csv" hidden>
         </label>
-        <button class="start-active-btn" id="startSystemBtn">運行支援システム 有効化起動</button>
+        
+        <button class="btn-trigger" id="btnBoot" style="display:none;">システム起動</button>
     </div>
 </div>
 
 <script>
-let routeData = [];
+let timetable = [];
 let currentIndex = 0;
-let warned2000 = false;
-let isFinished = false; 
-let startTime = null;
-let currentPosition = { lat: 0, lon: 0 };
-let availableVoices = [];
-let audioCtx = null;
-let routeDataRawText = "";
 
-function logStatus(msg) {
-    document.getElementById("statusText").textContent = `[SYS_LOG] ${msg}`;
+// 駅ごとの接近警告状態を個別に管理するフラグ
+let warned2000 = false; 
+let warned400 = false;  
+
+let routeFinished = false;
+let systemStartTime = null;
+let currentCoords = { lat: 0, lon: 0 };
+let speechVoices = [];
+let webAudioCtx = null;
+let rawCsvContent = "";
+
+let globalCarCount = "8";
+let globalTrainType = "普通";
+
+function writeLog(msg) {
+    document.getElementById("uiLogText").textContent = `[LOG] ${msg}`;
 }
 
-function initVoices() {
+function loadVoices() {
     if (!("speechSynthesis" in window)) return;
-    availableVoices = window.speechSynthesis.getVoices();
+    speechVoices = window.speechSynthesis.getVoices();
 }
-initVoices();
-if ("speechSynthesis" in window) { window.speechSynthesis.onvoiceschanged = initVoices; }
+loadVoices();
+if ("speechSynthesis" in window) { window.speechSynthesis.onvoiceschanged = loadVoices; }
 
 setInterval(() => {
-    const now = new Date();
-    document.getElementById("clock").textContent = 
-        `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}:${String(now.getSeconds()).padStart(2,"0")}`;
+    const d = new Date();
+    document.getElementById("liveClock").textContent = 
+        `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`;
 }, 250);
 
-// 【修正】指定された文字コードで確実に読み込む処理（自動判別を排除）
-document.getElementById("csvFile").addEventListener("change", e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    // ラジオボタンで選ばれているエンコードを取得
-    const selectedEncoding = document.querySelector('input[name="encodingSelect"]:checked').value;
-
+document.getElementById("inputCsv").addEventListener("change", e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const encoding = document.querySelector('input[name="enc"]:checked').value;
     const reader = new FileReader();
     reader.onload = evt => {
-        const buffer = evt.target.result;
-        const arr = new Uint8Array(buffer);
-        
-        const decoder = new TextDecoder(selectedEncoding);
-        routeDataRawText = decoder.decode(arr);
-        
-        document.getElementById("startSystemBtn").style.display = "block";
-        logStatus(`CSV読込完了（指定方式: ${selectedEncoding.toUpperCase()}）。有効化起動してください。`);
+        rawCsvContent = new TextDecoder(encoding).decode(new Uint8Array(evt.target.result));
+        document.getElementById("btnBoot").style.display = "block";
+        writeLog("タイムテーブルデータ取得成功。");
     };
-    reader.readAsArrayBuffer(file);
+    reader.readAsArrayBuffer(f);
 });
 
-document.getElementById("startSystemBtn").addEventListener("click", () => {
-    if(!routeDataRawText) return;
-    document.getElementById("initScreen").style.display = "none";
+document.getElementById("btnBoot").addEventListener("click", () => {
+    globalCarCount = document.querySelector('input[name="cars"]:checked').value;
+    globalTrainType = document.querySelector('input[name="typ"]:checked').value;
     
+    let typeSign = "A";
+    if (globalTrainType === "特急") typeSign = "L";
+    else if (globalTrainType === "新快速") typeSign = "W";
+    else if (globalTrainType === "快速" || globalTrainType === "通勤快速") typeSign = "M";
+    
+    document.getElementById("uiTrainId").textContent = `${typeSign}0125 (${globalCarCount}両編成)`;
+    document.getElementById("initModal").style.display = "none";
+
     const AudioContext = window.AudioContext || window.webkitAudioContext;
-    audioCtx = new AudioContext();
-    
+    webAudioCtx = new AudioContext();
     try { window.speechSynthesis.speak(new SpeechSynthesisUtterance("")); } catch(e){}
-    
-    startTime = Date.now();
-    parseCSV(routeDataRawText);
-    recalculatePlannedTimestamps();
-    startGPS();
-    renderStafTable();
-    updateUI();
 
-    if (routeData.length > 0) {
-        triggerStationAnnounce(routeData[currentIndex]);
-    }
+    systemStartTime = Date.now();
+    compileTimetable(rawCsvContent);
+    injectTimeCalculations();
+    setupPositionWatcher();
+    drawStaf();
+    refreshDisplay();
+
+    if (timetable.length > 0) { playVoiceGuidance(timetable[currentIndex]); }
 });
 
-function parseCSV(text) {
+function compileTimetable(text) {
     const lines = text.split(/\r?\n/);
-    routeData = [];
-    let totalAccumulatedSeconds = 0;
+    timetable = [];
+    let cumulativeSec = 0;
+    const speedPresets = ["90 km/h", "100 km/h", "110 km/h", "120 km/h", "130 km/h"];
 
     for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-        const cols = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+        const rowText = lines[i].trim();
+        if (!rowText) continue;
+        const cols = rowText.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
         if (cols.length < 6) continue;
 
-        const stationName = cols[0].replace(/^"|"$/g, "").trim();
-        let lat = parseFloat(cols[1]) || 0.0;
-        let lon = parseFloat(cols[2]) || 0.0;
-        const minOffset = parseInt(cols[3]) || 0;
-        const secOffset = parseInt(cols[4]) || 0;
-        const type = cols[5].replace(/^"|"$/g, "").trim();
-        const rawAnnounce = cols[6] ? cols[6].replace(/^"|"$/g, "").trim() : "";
+        cumulativeSec += (parseInt(cols[3]) || 0) * 60 + (parseInt(cols[4]) || 0);
+        const randomSpeed = speedPresets[Math.floor(Math.random() * speedPresets.length)];
+        const randomDoor = Math.random() > 0.5 ? "左側" : "右側";
 
-        totalAccumulatedSeconds += (minOffset * 60) + secOffset;
-        let jaText = rawAnnounce, enText = "";
-        if (rawAnnounce.includes("..")) {
-            const parts = rawAnnounce.split("..");
-            jaText = parts[0].trim(); enText = parts[1].trim();
-        }
+        let rawTypeCol = cols[5] ? cols[5].replace(/^"|"$/g, "").trim() : "";
+        let isPassStation = rawTypeCol.includes("通過");
 
-        routeData.push({
-            station: stationName, lat, lon, accumulatedSeconds: totalAccumulatedSeconds,
-            timeStr: "", plannedTimestamp: 0, type, japaneseText: jaText, englishText: enText,
-            actualTime: "", diffText: "--", diffColor: "var(--text-secondary)"
+        timetable.push({
+            station: cols[0].replace(/^"|"$/g, "").trim(),
+            lat: parseFloat(cols[1]) || 0, lon: parseFloat(cols[2]) || 0,
+            accumulatedSeconds: cumulativeSec, arrTimeStr: "", depTimeStr: "", plannedTimestamp: 0,
+            type: globalTrainType, 
+            isPass: isPassStation,
+            rawAnnounce: cols[6] ? cols[6].replace(/^"|"$/g, "").trim() : "",
+            actualTime: "", diffText: "--", diffColor: "var(--text-muted)",
+            speedGoal: randomSpeed, doorSide: randomDoor, stopGoal: globalCarCount
         });
     }
 }
 
-function recalculatePlannedTimestamps() {
-    routeData.forEach(r => {
-        const pTime = new Date(startTime + (r.accumulatedSeconds * 1000));
-        r.plannedTimestamp = pTime.getTime();
-        r.timeStr = `${String(pTime.getHours()).padStart(2,"0")}:${String(pTime.getMinutes()).padStart(2,"0")}:${String(pTime.getSeconds()).padStart(2,"0")}`;
+function injectTimeCalculations() {
+    timetable.forEach(item => {
+        const t = new Date(systemStartTime + (item.accumulatedSeconds * 1000));
+        item.plannedTimestamp = t.getTime();
+        
+        const pad = (num) => String(num).padStart(2, "0");
+        item.arrTimeStr = `${pad(t.getHours())}:${pad(t.getMinutes())}:${pad(t.getSeconds())}`;
+        
+        const tDep = new Date(t.getTime() + 30000);
+        item.depTimeStr = `${pad(tDep.getHours())}:${pad(tDep.getMinutes())}:${pad(tDep.getSeconds())}`;
     });
 }
 
-function renderStafTable() {
-    const table = document.getElementById("stafTable");
-    table.innerHTML = ""; 
-    routeData.forEach((r, idx) => {
-        const row = document.createElement("div");
-        row.className = "staf-row";
-        if (idx === currentIndex && !isFinished) row.classList.add("active");
-        
-        const isStop = r.type === "停車";
-        if (!isStop) row.classList.add("pass-row");
+function makeSignDisplayHTML(typeText, isLarge = false, isPass = false) {
+    let jp = typeText || "普通";
+    let en = "Local";
+    let themeClass = "theme-local";
+    let routeSymbol = "A"; 
+    let noSymbolClass = "";
 
-        row.innerHTML = `
-            <div class="type-indicator ${isStop?'stop':'pass'}">${isStop?'停車':'通過'}</div>
-            <div class="staf-station">${r.station}</div>
-            <div class="staf-time">${r.timeStr}</div>
-            <div class="staf-actual">${r.actualTime || "--:--:--"}</div>
-            <div class="staf-diff" style="color: ${r.diffColor};">${r.diffText}</div>
+    if (jp.includes("新快速")) { en = "Special Rapid Service"; themeClass = "theme-special-rapid"; }
+    else if (jp.includes("通勤快速")) { en = "Commuter Rapid Service"; themeClass = "theme-commuter-rapid"; }
+    else if (jp.includes("区間快速")) { en = "Regional Rapid Service"; themeClass = "theme-semi-rapid"; }
+    else if (jp.includes("快速")) { en = "Rapid Service"; themeClass = "theme-rapid"; }
+    else if (jp.includes("特急")) { en = "Limited Express"; themeClass = "theme-ltd-exp"; noSymbolClass = "no-symbol"; }
+    else if (jp.includes("終着")) { jp = "当駅止"; en = "Terminal"; themeClass = "theme-terminal"; noSymbolClass = "no-symbol"; }
+
+    let passBlackoutClass = isPass ? "pass-blackout" : "";
+
+    return `
+        <div class="jr-sign-container ${isLarge ? 'large' : 'small'} ${themeClass} ${noSymbolClass} ${passBlackoutClass}">
+            <div class="jr-sign-top">
+                <div class="jr-sign-symbol">${routeSymbol}</div>
+                <div class="jr-sign-jp-box">
+                    <div class="jr-sign-jp">${jp}</div>
+                </div>
+            </div>
+            <div class="jr-sign-en">${en}</div>
+        </div>
+    `;
+}
+
+function makeDiamondHTML(num) {
+    return `<div class="jr-diamond-box"><span>${num}</span></div>`;
+}
+
+function drawStaf() {
+    const box = document.getElementById("stafRowsContainer");
+    box.innerHTML = "";
+    timetable.forEach((item, idx) => {
+        const el = document.createElement("div");
+        el.className = "staf-row";
+        if (item.isPass) el.classList.add("is-pass-station");
+        
+        if (idx === currentIndex && !routeFinished) {
+            el.classList.add("active");
+            el.addEventListener("click", forwardProgress);
+        }
+
+        let arrDisplay = item.isPass ? "  ↓  " : item.arrTimeStr;
+        let depDisplay = item.isPass ? "  ↓  " : item.depTimeStr;
+
+        let statusBadgeHTML = item.isPass 
+            ? `<div class="status-led-badge pass">通過</div>` 
+            : `<div class="status-led-badge stop">停車</div>`;
+
+        el.innerHTML = `
+            <div>${makeSignDisplayHTML(item.type, false, item.isPass)}</div>
+            <div>${statusBadgeHTML}</div>
+            <div class="staf-station-name">${item.station}</div>
+            <div class="staf-time-cell">${arrDisplay}</div>
+            <div class="staf-time-cell">${depDisplay}</div>
+            <div class="staf-actual-cell">${item.actualTime || "--:--:--"}</div>
+            <div class="staf-diff-cell" style="color:${item.diffColor}">${item.diffText}</div>
         `;
-        table.appendChild(row);
+        box.appendChild(el);
     });
-    const activeRow = table.querySelector(".active");
+    const activeRow = box.querySelector(".active");
     if (activeRow) activeRow.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
-function updateUI() {
-    if (isFinished || currentIndex >= routeData.length) {
-        document.getElementById("nextStation").textContent = "全行程終了";
-        document.getElementById("nextTypeBadge").textContent = "終着";
-        document.getElementById("nextTypeBadge").className = "target-type-frame";
-        return;
-    }
-
-    const target = routeData[currentIndex];
-    document.getElementById("nextStation").textContent = target.station;
+function refreshDisplay() {
+    const slotBadge = document.getElementById("uiNextBadgeSlot");
+    const labelEl = document.getElementById("uiNextLabel");
     
-    const badge = document.getElementById("nextTypeBadge");
-    badge.textContent = target.type;
-    badge.className = target.type === "停車" ? "target-type-frame stop" : "target-type-frame pass";
-}
-
-function startGPS() {
-    if (!navigator.geolocation) {
-        updateSpeedGauge(80);
+    if (routeFinished || currentIndex >= timetable.length) {
+        document.getElementById("uiNextStation").textContent = "全行程終了";
+        slotBadge.innerHTML = makeSignDisplayHTML("終着", true, false);
+        document.getElementById("uiStopMarkerSlot").innerHTML = "";
         return;
     }
-    navigator.geolocation.watchPosition(pos => {
-        if (isFinished || currentIndex >= routeData.length) return;
-        currentPosition.lat = pos.coords.latitude;
-        currentPosition.lon = pos.coords.longitude;
-        let speedKmh = Math.round((pos.coords.speed || 0) * 3.6);
-        updateSpeedGauge(speedKmh < 0 ? 0 : speedKmh);
 
-        const target = routeData[currentIndex];
-        if (target.lat === 0 && target.lon === 0) return;
-        const dist = calcDistance(currentPosition.lat, currentPosition.lon, target.lat, target.lon);
-        if (dist <= 1.5 && !warned2000) {
-            warned2000 = true;
-            document.getElementById("lampPattern").className = "ats-lamp active-orange";
-            playBeepAlarm(2200, 0.15);
-            triggerStationAnnounce(target);
+    const currentTarget = timetable[currentIndex];
+    document.getElementById("uiNextStation").textContent = currentTarget.station;
+    slotBadge.innerHTML = makeSignDisplayHTML(currentTarget.type, true, currentTarget.isPass);
+    
+    if (currentTarget.isPass) {
+        labelEl.textContent = "▼ NEXT PASS STATION（当駅通過）";
+        labelEl.style.color = "var(--rail-yellow)";
+        document.getElementById("uiStopMarkerSlot").innerHTML = "<span style='font-size:11px;color:#666;'>[ 通過 ]</span>";
+    } else {
+        labelEl.textContent = "▼ NEXT STATION";
+        labelEl.style.color = "var(--rail-green)";
+        document.getElementById("uiStopMarkerSlot").innerHTML = makeDiamondHTML(currentTarget.stopGoal);
+    }
+
+    document.getElementById("uiTargetSpeed").textContent = currentTarget.speedGoal;
+    document.getElementById("uiDoorSide").textContent = currentTarget.isPass ? "--" : currentTarget.doorSide;
+}
+
+function playVoiceGuidance(target) {
+    if (!target || routeFinished) return;
+    
+    let text = target.rawAnnounce.replace(/JR/g, "ジェイアール");
+    
+    if (target.isPass) {
+        text = `まもなく、${target.station}を通過します。`;
+    } else {
+        text = (target.doorSide === "左側") 
+            ? text.replace(/右側/g, "左側").replace(/right side/g, "left side")
+            : text.replace(/左側/g, "右側").replace(/left side/g, "right side");
+    }
+
+    document.getElementById("uiBroadcastText").innerText = text;
+
+    if (!("speechSynthesis" in window)) return;
+    try { window.speechSynthesis.cancel(); } catch(e){}
+
+    const segments = text.split(/([^\x00-\x7F]+[\s、。]*)/g).filter(p => p.trim() !== "");
+
+    segments.forEach(p => {
+        let cleanText = p.trim();
+        if (!cleanText) return;
+
+        const ut = new SpeechSynthesisUtterance(cleanText);
+        
+        if (/[^\x00-\x7F]/.test(cleanText)) {
+            ut.lang = "ja-JP"; 
+            ut.rate = 1.05; 
+            ut.pitch = 1.0;
+            const jv = speechVoices.find(v => v.lang.includes("ja") && !v.name.includes("Google"));
+            if (jv) ut.voice = jv;
+        } else {
+            ut.lang = "en-US"; 
+            ut.rate = 0.90;  
+            ut.pitch = 1.05; 
+            
+            let ev = speechVoices.find(v => v.lang.startsWith("en") && v.name.includes("Natural")) || 
+                     speechVoices.find(v => v.lang.startsWith("en") && v.name.includes("Samantha")) || 
+                     speechVoices.find(v => v.lang.startsWith("en") && v.name.toLowerCase().includes("google")) || 
+                     speechVoices.find(v => v.lang.startsWith("en")); 
+            if (ev) ut.voice = ev;
         }
-    }, () => {}, { enableHighAccuracy: true });
-}
-
-function updateSpeedGauge(khm) {
-    document.getElementById("speed").textContent = khm;
-    let percent = Math.min((khm / 120) * 100, 100); 
-    const bar = document.getElementById("speedBar");
-    bar.style.width = `${percent}%`;
-    bar.style.background = khm > 95 ? "var(--neon-red)" : "linear-gradient(90deg, #006622 0%, var(--neon-green) 100%)";
-}
-
-function playClickSound() {
-    if (!audioCtx) return;
-    const now = audioCtx.currentTime;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.frequency.setValueAtTime(1800, now);
-    gain.gain.setValueAtTime(0.2, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
-    osc.connect(gain); gain.connect(audioCtx.destination);
-    osc.start(now); osc.stop(now + 0.05);
-}
-
-function playBeepAlarm(freq, volume) {
-    if (!audioCtx) return;
-    const now = audioCtx.currentTime;
-    [0, 0.12].forEach((d) => {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.frequency.setValueAtTime(freq, now + d);
-        gain.gain.setValueAtTime(volume, now + d);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + d + 0.06);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(now + d); osc.stop(now + d + 0.06);
+        
+        window.speechSynthesis.speak(ut);
     });
 }
 
-function triggerStationAnnounce(target) {
-    if (!target || isFinished) return;
-    
-    const displayForm = target.japaneseText + (target.englishText ? " \n " + target.englishText : "");
-    document.getElementById("announcementText").innerText = displayForm || "（案内放送データなし）";
+function forwardProgress() {
+    if (routeFinished || timetable.length === 0 || currentIndex >= timetable.length) return;
+    clickSound();
 
-    if (!("speechSynthesis" in window)) return;
-    try { window.speechSynthesis.cancel(); } catch(e) {}
-
-    if (target.japaneseText) {
-        const utterJa = new SpeechSynthesisUtterance(target.japaneseText);
-        utterJa.lang = "ja-JP"; utterJa.rate = 1.05;
-        const voiceJa = availableVoices.find(v => v.lang.includes("ja"));
-        if (voiceJa) utterJa.voice = voiceJa;
-        window.speechSynthesis.speak(utterJa);
-    }
-    if (target.englishText) {
-        const utterEn = new SpeechSynthesisUtterance(target.englishText);
-        utterEn.lang = "en-US"; utterEn.rate = 0.95;
-        let voiceEn = availableVoices.find(v => v.lang.startsWith("en") && v.name.toLowerCase().includes("google"));
-        if (!voiceEn) voiceEn = availableVoices.find(v => v.lang.startsWith("en"));
-        if (voiceEn) utterEn.voice = voiceEn;
-        window.speechSynthesis.speak(utterEn);
-    }
-}
-
-function processManualEvent() {
-    if (isFinished || routeData.length === 0 || currentIndex >= routeData.length) return;
-    
-    playClickSound();
-
-    const target = routeData[currentIndex];
+    const currentTarget = timetable[currentIndex];
     const now = new Date();
     
-    target.actualTime = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}:${String(now.getSeconds()).padStart(2,"0")}`;
-    const diffSec = Math.round((now.getTime() - target.plannedTimestamp) / 1000);
-    
-    if (Math.abs(diffSec) <= 5) {
-        target.diffText = "定時 ±0秒"; target.diffColor = "var(--neon-green)";
-    } else if (diffSec > 0) {
-        const m = Math.floor(diffSec / 60); const s = diffSec % 60;
-        target.diffText = `延着 ${m > 0 ? m + '分' : ''}${s}秒`; target.diffColor = "var(--neon-red)";
+    currentTarget.actualTime = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}:${String(now.getSeconds()).padStart(2,"0")}`;
+
+    const diff = Math.round((now.getTime() - currentTarget.plannedTimestamp) / 1000);
+    if (Math.abs(diff) <= 5) {
+        currentTarget.diffText = "定時"; currentTarget.diffColor = "var(--rail-green)";
+    } else if (diff > 0) {
+        currentTarget.diffText = `延着 ${Math.floor(diff/60) > 0 ? Math.floor(diff/60)+'分' : ''}${diff%60}秒`; currentTarget.diffColor = "var(--rail-red)";
     } else {
-        const absSec = Math.abs(diffSec);
-        const m = Math.floor(absSec / 60); const s = absSec % 60;
-        target.diffText = `早着 ${m > 0 ? m + '分' : ''}${s}秒`; target.diffColor = "var(--neon-green)";
+        const absSec = Math.abs(diff);
+        currentTarget.diffText = `早着 ${Math.floor(absSec/60) > 0 ? Math.floor(absSec/60)+'分' : ''}${absSec%60}秒`; currentTarget.diffColor = "var(--rail-green)";
     }
 
-    if (currentIndex === routeData.length - 1) {
-        isFinished = true;
-        renderStafTable(); updateUI();
-        document.getElementById("announcementText").innerText = "全行程の運転が終了しました。お疲れ様でした。";
-        logStatus("全行程終了。お疲れ様でした。");
-        try { window.speechSynthesis.speak(new SpeechSynthesisUtterance("全行程の運転が終了しました。お疲れ様でした。")); } catch(e){}
+    if (currentIndex === timetable.length - 1) {
+        routeFinished = true;
+        drawStaf(); refreshDisplay();
+        document.getElementById("uiBroadcastText").innerText = "全行程の乗務運転作業が終了しました。";
         return;
     }
 
     currentIndex++;
-    warned2000 = false;
-    document.getElementById("lampPattern").className = "ats-lamp";
-    renderStafTable(); updateUI();
     
-    if (currentIndex < routeData.length) {
-        triggerStationAnnounce(routeData[currentIndex]);
-    }
+    // 次の駅に進むため、接近警告用フラグをクリア
+    warned2000 = false;
+    warned400 = false;
+    
+    drawStaf(); refreshDisplay();
+    if (currentIndex < timetable.length) { playVoiceGuidance(timetable[currentIndex]); }
 }
 
-document.getElementById("arrivalBtn").addEventListener("click", processManualEvent);
-document.getElementById("skipBtn").addEventListener("click", processManualEvent);
-document.getElementById("announceBtn").addEventListener("click", () => {
-    playClickSound();
-    if (!isFinished && routeData.length > 0) { triggerStationAnnounce(routeData[currentIndex]); }
+function setupPositionWatcher() {
+    if (!navigator.geolocation) { speedSimulation(65); return; }
+    navigator.geolocation.watchPosition(pos => {
+        if (routeFinished || currentIndex >= timetable.length) return;
+        currentCoords.lat = pos.coords.latitude; currentCoords.lon = pos.coords.longitude;
+        let kmh = Math.round((pos.coords.speed || 0) * 3.6);
+        speedSimulation(kmh < 0 ? 0 : kmh);
+
+        const target = timetable[currentIndex];
+        if (target.lat === 0 && target.lon === 0) return;
+        
+        const dist = getDistance(currentCoords.lat, currentCoords.lon, target.lat, target.lon);
+        
+        // 【新機能】目的地の2.0km手前に来た時の警告処理
+        if (dist <= 2.0 && dist > 0.4 && !warned2000) {
+            warned2000 = true;
+            beepAlert(1200, 0.15); // 少し低めの予告チャイム
+            writeLog(`[ATS] 目的地2km手前接近: ${target.station}`);
+        }
+        
+        // 目的地の400m(0.4km)手前に来た時の警告 ＆ 自動アナウンス
+        if (dist <= 0.4 && !warned400) { 
+            warned400 = true;
+            beepAlert(2000, 0.1); // 高めの直前チャイム
+            writeLog(`[ATS] 目的地400m手前直前: ${target.station}`);
+            playVoiceGuidance(target);
+        }
+    }, () => {}, { enableHighAccuracy: true });
+}
+
+function speedSimulation(v) {
+    document.getElementById("uiSpeedDigit").textContent = v;
+    let pct = Math.min((v / 130) * 100, 100);
+    const bar = document.getElementById("uiSpeedBar");
+    bar.style.width = `${pct}%`;
+    bar.style.background = v > 105 ? "var(--rail-red)" : "var(--rail-green)";
+}
+
+function clickSound() {
+    if (!webAudioCtx) return;
+    const ctx = webAudioCtx; const now = ctx.currentTime;
+    const osc = ctx.createOscillator(); const gain = ctx.createGain();
+    osc.frequency.setValueAtTime(1600, now); gain.gain.setValueAtTime(0.15, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.04);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(now); osc.stop(now + 0.04);
+}
+
+function beepAlert(f, vol) {
+    if (!webAudioCtx) return;
+    const ctx = webAudioCtx; const now = ctx.currentTime;
+    [0, 0.1].forEach(d => {
+        const osc = ctx.createOscillator(); const gain = ctx.createGain();
+        osc.frequency.setValueAtTime(f, now + d); gain.gain.setValueAtTime(vol, now + d);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + d + 0.05);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(now + d); osc.stop(now + d + 0.05);
+    });
+}
+
+document.getElementById("btnArrival").addEventListener("click", forwardProgress);
+document.getElementById("btnSkip").addEventListener("click", forwardProgress);
+document.getElementById("btnRepeat").addEventListener("click", () => {
+    clickSound();
+    if (!routeFinished && timetable.length > 0) { playVoiceGuidance(timetable[currentIndex]); }
 });
 
-function calcDistance(lat1, lon1, lat2, lon2) {
+function getDistance(lat1, lon1, lat2, lon2) {
     const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180; const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
