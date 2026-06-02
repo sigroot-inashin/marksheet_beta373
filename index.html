@@ -321,14 +321,14 @@ input[value="特急"]:checked + .type-tile { background: var(--color-ltd-exp); c
   body { padding-bottom: 130px !important; }
 
   /* 【重要】リストの列崩れを防止 */
-  .staf-thead {
-    /* PC用の列指定をスマホでは無視して単純化 */
-    grid-template-columns: 40px 40px 1fr 60px !important;
-  }
-  .staf-row {
-    grid-template-columns: 40px 40px 1fr 60px !important;
-    padding: 4px 2px !important;
-  }
+ .staf-tbody{
+ overflow-x:auto;
+}
+
+.staf-row,
+.staf-thead{
+ min-width:700px;
+}
   
   /* スマホでは不要な列を非表示に */
   .staf-thead > div:nth-child(4), /* 着時刻 */
