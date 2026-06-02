@@ -445,7 +445,7 @@ input[value="特急"]:checked + .type-tile { background: var(--color-ltd-exp); c
             </li>
             <li>
                 <input type="radio" name="typ" value="特別快速" id="t-semi">
-                <label for="t-semi" class="type-tile"><div>特別快速</div><div class="tile-en">Special Rapid</div></label>
+                <label for="t-special" class="type-tile"><div>特別快速</div><div class="tile-en">Special Rapid</div></label>
             </li>
             <li>
                 <input type="radio" name="typ" value="快速" id="t-rapid">
@@ -535,7 +535,7 @@ document.getElementById("btnBoot").addEventListener("click", () => {
     globalCarCount = document.querySelector('input[name="cars"]:checked').value;
     globalTrainType = document.querySelector('input[name="typ"]:checked').value;
     
-    let typeSign = "N";
+    let typeSign = "A";
     if (globalTrainType === "特急") typeSign = "L";
     else if (globalTrainType === "新快速") typeSign = "W";
     else if (globalTrainType === "快速" || globalTrainType === "通勤快速") typeSign = "M";
@@ -610,8 +610,8 @@ function makeSignDisplayHTML(typeText, isLarge = false, isPass = false) {
     let noSymbolClass = "";
 
     if (jp.includes("新快速")) { en = "New Rapid "; themeClass = "theme-New rapid"; }
-    else if (jp.includes("通勤快速")) { en = "Commuter Rapid "; themeClass = "theme-Commuter Rapid"; }
-    else if (jp.includes("特別快速")) { en = "Special Rapid "; themeClass = "theme-semi-rapid"; }
+    else if (jp.includes("通勤快速")) { en = "Commuter Rapid "; themeClass = "theme-Commuter rapid"; }
+    else if (jp.includes("特別快速")) { en = "Special Rapid "; themeClass = "theme-Special rapid"; }
     else if (jp.includes("快速")) { en = "Rapid Service"; themeClass = "theme-rapid"; }
     else if (jp.includes("特急")) { en = "Limited Exp"; themeClass = "theme-ltd-exp"; noSymbolClass = "no-symbol"; }
     else if (jp.includes("終着")) { jp = "当駅止"; en = "Terminal"; themeClass = "theme-terminal"; noSymbolClass = "no-symbol"; }
