@@ -441,11 +441,11 @@ input[value="特急"]:checked + .type-tile { background: var(--color-ltd-exp); c
         <ul class="jr-type-list">
             <li>
                 <input type="radio" name="typ" value="普通" id="t-local" checked>
-                <label for="t-local" class="type-tile"><div>普通</div><div class="tile-en">Local</div></label>
+                <label for="t-local" class="type-tile"><div>各駅停車</div><div class="tile-en">Local Service</div></label>
             </li>
             <li>
-                <input type="radio" name="typ" value="区間快速" id="t-semi">
-                <label for="t-semi" class="type-tile"><div>区間快速</div><div class="tile-en">Regional Rapid</div></label>
+                <input type="radio" name="typ" value="特別快速" id="t-semi">
+                <label for="t-semi" class="type-tile"><div>特別快速</div><div class="tile-en">Special Rapid</div></label>
             </li>
             <li>
                 <input type="radio" name="typ" value="快速" id="t-rapid">
@@ -453,29 +453,29 @@ input[value="特急"]:checked + .type-tile { background: var(--color-ltd-exp); c
             </li>
             <li>
                 <input type="radio" name="typ" value="通勤快速" id="t-commuter">
-                <label for="t-commuter" class="type-tile"><div>通勤快速</div><div class="tile-en">Commuter Rapid</div></label>
+                <label for="t-commuter" class="type-tile"><div>通勤快速</div><div class="tile-en">Commer Rapie</div></label>
             </li>
             <li>
                 <input type="radio" name="typ" value="新快速" id="t-special">
-                <label for="t-special" class="type-tile"><div>新快速</div><div class="tile-en">Special Rapid</div></label>
+                <label for="t-special" class="type-tile"><div>新快速</div><div class="tile-en">New Rapid</div></label>
             </li>
             <li>
                 <input type="radio" name="typ" value="特急" id="t-express">
-                <label for="t-express" class="type-tile"><div>特急</div><div class="tile-en">Ltd. Express</div></label>
+                <label for="t-express" class="type-tile"><div>特急</div><div class="tile-en">Limited Exp.</div></label>
             </li>
         </ul>
 
         <div class="group-title">3. 組成両数</div>
         <div class="selector-row">
-            <label><input type="radio" name="cars" value="4"> 4両</label>
+            <label><input type="radio" name="cars" value="3"> 3両</label>
             <label><input type="radio" name="cars" value="6"> 6両</label>
-            <label><input type="radio" name="cars" value="8" checked> 8両</label>
-            <label><input type="radio" name="cars" value="12"> 12両</label>
+            <label><input type="radio" name="cars" value="10" checked> 10両</label>
+            <label><input type="radio" name="cars" value="15"> 15両</label>
         </div>
 
-        <div class="group-title">4. タイムテーブル読込</div>
+        <div class="group-title">4. スタフ作成</div>
         <label class="upload-label">
-            カスタムスタフCSVファイルを選択
+            CSVファイルを導入してください
             <input type="file" id="inputCsv" accept=".csv" hidden>
         </label>
         
@@ -535,7 +535,7 @@ document.getElementById("btnBoot").addEventListener("click", () => {
     globalCarCount = document.querySelector('input[name="cars"]:checked').value;
     globalTrainType = document.querySelector('input[name="typ"]:checked').value;
     
-    let typeSign = "A";
+    let typeSign = "N";
     if (globalTrainType === "特急") typeSign = "L";
     else if (globalTrainType === "新快速") typeSign = "W";
     else if (globalTrainType === "快速" || globalTrainType === "通勤快速") typeSign = "M";
@@ -609,11 +609,11 @@ function makeSignDisplayHTML(typeText, isLarge = false, isPass = false) {
     let routeSymbol = "A"; 
     let noSymbolClass = "";
 
-    if (jp.includes("新快速")) { en = "Special Rapid Service"; themeClass = "theme-special-rapid"; }
-    else if (jp.includes("通勤快速")) { en = "Commuter Rapid Service"; themeClass = "theme-commuter-rapid"; }
-    else if (jp.includes("区間快速")) { en = "Regional Rapid Service"; themeClass = "theme-semi-rapid"; }
+    if (jp.includes("新快速")) { en = "New Rapid "; themeClass = "theme-New rapid"; }
+    else if (jp.includes("通勤快速")) { en = "Commuter Rapid "; themeClass = "theme-Commuter Rapid"; }
+    else if (jp.includes("特別快速")) { en = "Special Rapid "; themeClass = "theme-semi-rapid"; }
     else if (jp.includes("快速")) { en = "Rapid Service"; themeClass = "theme-rapid"; }
-    else if (jp.includes("特急")) { en = "Limited Express"; themeClass = "theme-ltd-exp"; noSymbolClass = "no-symbol"; }
+    else if (jp.includes("特急")) { en = "Limited Exp"; themeClass = "theme-ltd-exp"; noSymbolClass = "no-symbol"; }
     else if (jp.includes("終着")) { jp = "当駅止"; en = "Terminal"; themeClass = "theme-terminal"; noSymbolClass = "no-symbol"; }
 
     let passBlackoutClass = isPass ? "pass-blackout" : "";
