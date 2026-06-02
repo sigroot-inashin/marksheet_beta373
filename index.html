@@ -331,12 +331,9 @@ input[value="特別快速"]:checked + .type-tile{background: var(--color-special
  min-width:700px;
 }
   
-  /* スマホでは不要な列を非表示に */
-  .staf-thead > div:nth-child(4), /* 着時刻 */
+  /* スマホでは不要な列を非表示に */ /* 着時刻 */
   .staf-thead > div:nth-child(5), /* 発時刻 */
   .staf-thead > div:nth-child(6), /* 実績 */
-  .staf-thead > div:nth-child(7), /* 早晩 */
-  .staf-time-cell:nth-child(4), 
   .staf-time-cell:nth-child(5), 
   .staf-actual-cell, 
   .staf-diff-cell {
@@ -441,7 +438,7 @@ input[value="特別快速"]:checked + .type-tile{background: var(--color-special
         <div class="group-title">2. 列車種別選択（インパネ直感型）</div>
         <ul class="jr-type-list">
             <li>
-                <input type="radio" name="typ" value="普通" id="t-local" checked>
+                <input type="radio" name="typ" value="各駅停車" id="t-local" checked>
                 <label for="t-local" class="type-tile"><div>各駅停車</div><div class="tile-en">Local Service</div></label>
             </li>
             <li>
@@ -500,7 +497,7 @@ let webAudioCtx = null;
 let rawCsvContent = "";
 
 let globalCarCount = "8";
-let globalTrainType = "普通";
+let globalTrainType = "各駅停車";
 
 function writeLog(msg) {
     document.getElementById("uiLogText").textContent = `[LOG] ${msg}`;
@@ -604,7 +601,7 @@ function injectTimeCalculations() {
 }
 
 function makeSignDisplayHTML(typeText, isLarge = false, isPass = false) {
-    let jp = typeText || "普通";
+    let jp = typeText || "各駅停車";
     let en = "Local";
     let themeClass = "theme-local";
     let routeSymbol = "A"; 
