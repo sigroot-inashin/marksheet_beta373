@@ -287,7 +287,8 @@ input[value="快速"]:checked + .type-tile { background: var(--color-rapid); col
 input[value="通勤快速"]:checked + .type-tile { background: var(--color-commuter-rapid); color: #fff; border-color: #fff; }
 input[value="新快速"]:checked + .type-tile { background: var(--color-special-rapid); color: #fff; border-color: #fff; }
 input[value="特急"]:checked + .type-tile { background: var(--color-ltd-exp); color: #fff; border-color: #fff; }
-
+input[value="特別快速"]:checked + .type-tile{background: var(--color-special-rapid);color:#fff;border-color:#fff;
+}
 .upload-label { background: #1a1a1a; border: 1px solid #333; text-align: center; padding: 12px; font-weight: 700; cursor: pointer; display: block; font-size: 13px; }
 .btn-trigger { background: var(--rail-green); color: #000; padding: 12px; font-size: 15px; font-weight: 900; border: none; cursor: pointer; width: 100%; text-align: center; }
 
@@ -457,7 +458,7 @@ input[value="特急"]:checked + .type-tile { background: var(--color-ltd-exp); c
             </li>
             <li>
                 <input type="radio" name="typ" value="新快速" id="t-new">
-                <label for="t-special" class="type-tile"><div>新快速</div><div class="tile-en">New Rapid</div></label>
+                <label for="t-new" class="type-tile"><div>新快速</div><div class="tile-en">New Rapid</div></label>
             </li>
             <li>
                 <input type="radio" name="typ" value="特急" id="t-express">
@@ -609,9 +610,9 @@ function makeSignDisplayHTML(typeText, isLarge = false, isPass = false) {
     let routeSymbol = "A"; 
     let noSymbolClass = "";
 
-    if (jp.includes("新快速")) { en = "New Rapid "; themeClass = "theme-New rapid"; }
+   if (jp.includes("新快速")) {en = "New Rapid"; themeClass = "theme-special-rapid";}
     else if (jp.includes("通勤快速")) { en = "Commuter Rapid "; themeClass = "theme-Commuter rapid"; }
-    else if (jp.includes("特別快速")) { en = "Special Rapid "; themeClass = "theme-Special rapid"; }
+    else if (jp.includes("特別快速")) { en = "Special Rapid"; themeClass = "theme-special-rapid"; }
     else if (jp.includes("快速")) { en = "Rapid Service"; themeClass = "theme-rapid"; }
     else if (jp.includes("特急")) { en = "Limited Exp"; themeClass = "theme-ltd-exp"; noSymbolClass = "no-symbol"; }
     else if (jp.includes("終着")) { jp = "当駅止"; en = "Terminal"; themeClass = "theme-terminal"; noSymbolClass = "no-symbol"; }
