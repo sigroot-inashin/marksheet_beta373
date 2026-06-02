@@ -307,48 +307,85 @@ input[value="特別快速"]:checked + .type-tile{background: var(--color-special
 ========================================== */
 /* --- iPhone向け最適化コード --- */
 /* --- iPhone向け最適化（列の重なりを解消） --- */
-@media screen and (max-width: 480px) {
+/* ==========================
+   Smartphone STAF Layout
+   ========================== */
+@media (max-width:768px){
 
-  /* ボタンの固定設定（既存） */
-  .bottom-actions {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    background-color: #000 !important;
-    padding: 10px !important;
-    z-index: 9999 !important;
-  }
-  body { padding-bottom: 130px !important; }
+    /* 種別列を非表示 */
+    .staf-row > div:first-child,
+    .staf-thead > div:first-child{
+        display:none;
+    }
 
-  /* 【重要】リストの列崩れを防止 */
- .staf-tbody{
- overflow-x:auto;
-}
+    /* 横スクロール許可 */
+    .staf-wrap{
+        overflow-x:auto;
+        -webkit-overflow-scrolling:touch;
+    }
 
-.staf-row,
-.staf-thead{
- min-width:700px;
-}
-  
-  /* スマホでは不要な列を非表示に */ /* 着時刻 */
-  .staf-thead > div:nth-child(5), /* 発時刻 */
-  .staf-thead > div:nth-child(6), /* 実績 */
-  .staf-time-cell:nth-child(5), 
-  .staf-actual-cell, 
-  .staf-diff-cell {
-    display: none !important;
-  }
+    /* ヘッダー */
+    .staf-thead{
+        display:grid;
+        grid-template-columns:
+            70px   /* 状態 */
+            120px  /* 駅名 */
+            90px   /* 予定 */
+            90px   /* 実績 */
+            80px;  /* 誤差 */
+        min-width:450px;
+    }
 
-  /* フォントサイズ調整 */
-  .staf-station-name { font-size: 16px !important; padding-left: 4px !important; }
-  
-  /* 停・通バッジの調整 */
-  .status-led-badge {
-    font-size: 12px !important;
-    padding: 2px 4px !important;
-    width: 32px;
-  }
+    /* 各行 */
+    .staf-row{
+        display:grid;
+        grid-template-columns:
+            70px
+            120px
+            90px
+            90px
+            80px;
+        min-width:450px;
+    }
+
+    /* 文字サイズ */
+    .staf-row,
+    .staf-thead{
+        font-size:13px;
+    }
+
+    /* 状態表示 */
+    .status-stop{
+        color:#4CAF50;
+        font-weight:700;
+    }
+
+    .status-pass{
+        color:#FF9800;
+        font-weight:700;
+    }
+
+    .status-opstop{
+        color:#00B2E5;
+        font-weight:700;
+    }
+
+    /* 誤差表示 */
+    .delay-plus{
+        color:#ff6666;
+        font-weight:700;
+    }
+
+    .delay-minus{
+        color:#66ccff;
+        font-weight:700;
+    }
+
+    .delay-zero{
+        color:#00ff88;
+        font-weight:700;
+    }
+
 }
 
 </style>
@@ -855,7 +892,27 @@ function getDistance(lat1, lon1, lat2, lon2) {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
- 
+ function formatTime(date){
+    return date.toLocaleTimeString(
+        "ja-JP",
+        {
+            hour12:false,
+            hour:"2-digit",
+            minute:"2-digit",
+            second:"2-digit"
+        }
+    );
+}
+
+    function formatDelay(sec){
+    const sign = sec >= 0 ? "+" : "-";
+    const abs = Math.abs(sec);
+
+    const m = Math.floor(abs / 60);
+    const s = abs % 60;
+
+    return `${sign}${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+}
     
 </script>
 </body>
