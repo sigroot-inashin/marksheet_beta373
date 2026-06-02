@@ -310,81 +310,124 @@ input[value="特別快速"]:checked + .type-tile{background: var(--color-special
 /* ==========================
    Smartphone STAF Layout
    ========================== */
+/* ==========================
+   スマホ専用 STAF
+   ========================== */
 @media (max-width:768px){
 
-    /* 種別列を非表示 */
-    .staf-row > div:first-child,
-    .staf-thead > div:first-child{
-        display:none;
-    }
+  .staf-container{
+      width:100%;
+      overflow:hidden;
+  }
 
-    /* 横スクロール許可 */
-    .staf-wrap{
-        overflow-x:auto;
-        -webkit-overflow-scrolling:touch;
-    }
+  /* ヘッダー */
+  .staf-thead{
+      display:grid;
+      grid-template-columns:
+      52px   /* 種別 */
+      48px   /* 状態 */
+      1fr    /* 駅名 */
+      72px   /* 予定 */
+      72px   /* 実績 */
+      62px;  /* 誤差 */
 
-    /* ヘッダー */
-    .staf-thead{
-        display:grid;
-        grid-template-columns:
-            70px   /* 状態 */
-            120px  /* 駅名 */
-            90px   /* 予定 */
-            90px   /* 実績 */
-            80px;  /* 誤差 */
-        min-width:450px;
-    }
+      font-size:11px;
+      font-weight:700;
+      text-align:center;
+  }
 
-    /* 各行 */
-    .staf-row{
-        display:grid;
-        grid-template-columns:
-            70px
-            120px
-            90px
-            90px
-            80px;
-        min-width:450px;
-    }
+  /* 各行 */
+  .staf-row{
+      display:grid;
+      grid-template-columns:
+      52px
+      48px
+      1fr
+      72px
+      72px
+      62px;
 
-    /* 文字サイズ */
-    .staf-row,
-    .staf-thead{
-        font-size:13px;
-    }
+      min-height:42px;
+      align-items:center;
+      font-size:12px;
+  }
 
-    /* 状態表示 */
-    .status-stop{
-        color:#4CAF50;
-        font-weight:700;
-    }
+  /* 種別バッジ */
+  .train-type-badge{
+      display:inline-block;
+      width:48px;
+      padding:2px 0;
 
-    .status-pass{
-        color:#FF9800;
-        font-weight:700;
-    }
+      border-radius:6px;
 
-    .status-opstop{
-        color:#00B2E5;
-        font-weight:700;
-    }
+      color:#fff;
+      font-size:10px;
+      font-weight:700;
 
-    /* 誤差表示 */
-    .delay-plus{
-        color:#ff6666;
-        font-weight:700;
-    }
+      text-align:center;
+      white-space:nowrap;
+  }
 
-    .delay-minus{
-        color:#66ccff;
-        font-weight:700;
-    }
+  /* 駅名 */
+  .station-name{
+      text-align:left;
+      padding-left:4px;
+      font-weight:600;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+  }
 
-    .delay-zero{
-        color:#00ff88;
-        font-weight:700;
-    }
+  /* 時刻 */
+  .time-cell{
+      font-size:11px;
+      text-align:center;
+      font-family:monospace;
+  }
+
+  /* 状態 */
+  .status-stop{
+      color:#2ecc71;
+      font-weight:700;
+  }
+
+  .status-pass{
+      color:#f39c12;
+      font-weight:700;
+  }
+
+  .status-opstop{
+      color:#3498db;
+      font-weight:700;
+  }
+
+  /* 誤差 */
+.delay-late::before{
+    content:"▲";
+}
+
+.delay-early::before{
+    content:"▼";
+}
+    
+  .delay-late{
+      color:#ff4d4d;
+      font-weight:700;
+  }
+
+  .delay-early{
+      color:#4da6ff;
+      font-weight:700;
+  }
+
+  .delay-ontime{
+      color:#00cc66;
+      font-weight:700;
+  }
+
+  .delay-none{
+      color:#888;
+  }
 
 }
 
