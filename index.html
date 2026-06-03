@@ -780,52 +780,93 @@ function refreshDisplay() {
     let currentUtterances = []; // 再生中の音声インスタンスを管理
 function playVoiceGuidance(target) {
     if (!target || routeFinished) return;
-    
-    let text = target.rawAnnounce.replace(/JR/g, "ジェイアール");
-    
+
+    let text = target.rawAnnounce || "";
+
     if (target.isPass) {
         text = `まもなく、${target.station}を通過します。`;
     } else {
-        text = (target.doorSide === "左側") 
-            ? text.replace(/右側/g, "左側").replace(/right side/g, "left side")
-            : text.replace(/左側/g, "右側").replace(/left side/g, "right side");
+        text = (target.doorSide === "左側")
+            ? text.replace(/右側/g, "左側").replace(/right side/gi, "left side")
+            : text.replace(/左側/g, "右側").replace(/left side/gi, "right side");
     }
+
+    // JR読み補正
+    text = text.replace(/JR/g, "ジェイアール");
+
+    // ===== 日本語数字補正 =====
+    text = text
+        .replace(/伊那路1号/g, "いなじいちごう")
+        .replace(/伊那路2号/g, "いなじにごう")
+        .replace(/伊那路3号/g, "いなじさんごう")
+        .replace(/伊那路4号/g, "いなじよんごう")
+
+        .replace(/1号車/g, "いちごうしゃ")
+        .replace(/2号車/g, "にごうしゃ")
+        .replace(/3号車/g, "さんごうしゃ")
+        .replace(/4号車/g, "よんごうしゃ")
+        .replace(/5号車/g, "ごごうしゃ")
+        .replace(/6号車/g, "ろくごうしゃ");
+
+    // ===== 英語数字補正 =====
+    text = text
+        .replace(/number\s*[１1]/gi, "number one")
+        .replace(/number\s*[２2]/gi, "number two")
+        .replace(/number\s*[３3]/gi, "number three")
+        .replace(/number\s*[４4]/gi, "number four")
+
+        .replace(/car\s*[１1]/gi, "car one")
+        .replace(/car\s*[２2]/gi, "car two")
+        .replace(/car\s*[３3]/gi, "car three")
+        .replace(/car\s*[４4]/gi, "car four");
 
     document.getElementById("uiBroadcastText").innerText = text;
 
     if (!("speechSynthesis" in window)) return;
-    try { window.speechSynthesis.cancel(); } catch(e){}
 
-    const segments = text.split(/([^\x00-\x7F]+[\s、。]*)/g).filter(p => p.trim() !== "");
+    speechSynthesis.cancel();
 
-    segments.forEach(p => {
-        let cleanText = p.trim();
-        if (!cleanText) return;
+    const jpVoice = speechVoices.find(v =>
+        v.lang && v.lang.startsWith("ja")
+    );
 
-        const ut = new SpeechSynthesisUtterance(cleanText);
-        
-        if (/[^\x00-\x7F]/.test(cleanText)) {
-            ut.lang = "ja-JP"; 
-            ut.rate = 1.05; 
+    const enVoice = speechVoices.find(v =>
+        v.lang && v.lang.startsWith("en")
+    );
+
+    const utterances = [];
+
+    // 日本語文単位で区切る
+    const chunks = text.split(/(?<=[。！？])/);
+
+    chunks.forEach(chunk => {
+
+        if (!chunk.trim()) return;
+
+        const isEnglish =
+            /^[A-Za-z0-9 ,.'":;!?()\-\n]+$/.test(chunk.trim());
+
+        const ut = new SpeechSynthesisUtterance(chunk.trim());
+
+        if (isEnglish) {
+            ut.lang = "en-US";
+            ut.rate = 0.92;
             ut.pitch = 1.0;
-            const jv = speechVoices.find(v => v.lang.includes("ja") && !v.name.includes("Google"));
-            if (jv) ut.voice = jv;
+            if (enVoice) ut.voice = enVoice;
         } else {
-            ut.lang = "en-US"; 
-            ut.rate = 0.90;  
-            ut.pitch = 1.05; 
-            
-            let ev = speechVoices.find(v => v.lang.startsWith("en") && v.name.includes("Natural")) || 
-                     speechVoices.find(v => v.lang.startsWith("en") && v.name.includes("Samantha")) || 
-                     speechVoices.find(v => v.lang.startsWith("en") && v.name.toLowerCase().includes("google")) || 
-                     speechVoices.find(v => v.lang.startsWith("en")); 
-            if (ev) ut.voice = ev;
+            ut.lang = "ja-JP";
+            ut.rate = 1.0;
+            ut.pitch = 1.0;
+            if (jpVoice) ut.voice = jpVoice;
         }
-        
-        window.speechSynthesis.speak(ut);
+
+        utterances.push(ut);
+    });
+
+    utterances.forEach(ut => {
+        speechSynthesis.speak(ut);
     });
 }
-
 
 function forwardProgress() {
     if (routeFinished || timetable.length === 0 || currentIndex >= timetable.length) return;
