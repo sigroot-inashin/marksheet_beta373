@@ -777,53 +777,89 @@ function refreshDisplay() {
     document.getElementById("uiDoorSide").textContent = currentTarget.isPass ? "--" : currentTarget.doorSide;
 }
 
-function playVoiceGuidance(target) {
-    if (!target || routeFinished) return;
+    let currentUtterances = []; // 再生中の音声インスタンスを管理
+
+function playVoiceGuidance(row) {
+    if (!row || !row.announcement) return;
     
-    let text = target.rawAnnounce.replace(/JR/g, "ジェイアール");
+    // 1. 動いている音声をすべて完全にクリア
+    stopVoiceGuidance();
+
+    const fullText = row.announcement.trim();
+    if (!fullText) return;
+
+    // 2. 文章の内容を一文字も崩さず、日本語部分と英語部分に大きく分ける
+    // (英語と記号の連続部分を切り出す)
+    const englishRegex = /([A-Za-z0-9\s\.,'\?!‘“]+)/g;
     
-    if (target.isPass) {
-        text = `まもなく、${target.station}を通過します。`;
-    } else {
-        text = (target.doorSide === "左側") 
-            ? text.replace(/右側/g, "左側").replace(/right side/g, "left side")
-            : text.replace(/左側/g, "右側").replace(/left side/g, "right side");
+    // 全体の文章から、日本語ブロックと英語ブロックを正しく抽出
+    let parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = englishRegex.exec(fullText)) !== null) {
+        // 英語の前に日本語があれば、それを日本語ブロックとして追加
+        if (match.index > lastIndex) {
+            const jpText = fullText.substring(lastIndex, match.index).trim();
+            if (jpText) parts.push({ text: jpText, lang: 'ja-JP' });
+        }
+        // 抽出された英語ブロックを追加
+        const enText = match[0].trim();
+        if (enText) parts.push({ text: enText, lang: 'en-US' });
+        lastIndex = englishRegex.lastIndex;
     }
 
-    document.getElementById("uiBroadcastText").innerText = text;
+    // 最後に残った日本語があれば追加
+    if (lastIndex < fullText.length) {
+        const jpText = fullText.substring(lastIndex).length ? fullText.substring(lastIndex).trim() : "";
+        if (jpText) parts.push({ text: jpText, lang: 'ja-JP' });
+    }
 
-    if (!("speechSynthesis" in window)) return;
-    try { window.speechSynthesis.cancel(); } catch(e){}
+    // もし上手く分割できなかった場合の安全対策（全体を日本語として扱う）
+    if (parts.length === 0) {
+        parts.push({ text: fullText, lang: 'ja-JP' });
+    }
 
-    const segments = text.split(/([^\x00-\x7F]+[\s、。]*)/g).filter(p => p.trim() !== "");
-
-    segments.forEach(p => {
-        let cleanText = p.trim();
-        if (!cleanText) return;
-
-        const ut = new SpeechSynthesisUtterance(cleanText);
+    // 3. 分割された音声ブロックを順番にキュー（待ち行列）に入れて連続再生
+    parts.forEach((part, index) => {
+        const utterance = new SpeechSynthesisUtterance(part.text);
+        utterance.lang = part.lang;
         
-        if (/[^\x00-\x7F]/.test(cleanText)) {
-            ut.lang = "ja-JP"; 
-            ut.rate = 1.05; 
-            ut.pitch = 1.0;
-            const jv = speechVoices.find(v => v.lang.includes("ja") && !v.name.includes("Google"));
-            if (jv) ut.voice = jv;
+        // 音質・速度の調整（お好みに合わせて変更可能）
+        if (part.lang === 'ja-JP') {
+            utterance.rate = 1.05;  // 日本語は少し聞き取りやすく
+            utterance.pitch = 1.0;
         } else {
-            ut.lang = "en-US"; 
-            ut.rate = 0.90;  
-            ut.pitch = 1.05; 
-            
-            let ev = speechVoices.find(v => v.lang.startsWith("en") && v.name.includes("Natural")) || 
-                     speechVoices.find(v => v.lang.startsWith("en") && v.name.includes("Samantha")) || 
-                     speechVoices.find(v => v.lang.startsWith("en") && v.name.toLowerCase().includes("google")) || 
-                     speechVoices.find(v => v.lang.startsWith("en")); 
-            if (ev) ut.voice = ev;
+            utterance.rate = 0.95;  // 英語はネイティブ風に落ち着いて
+            utterance.pitch = 1.0;
         }
-        
-        window.speechSynthesis.speak(ut);
+
+        // 次のブロックへ繋ぐためのイベント設定
+        if (index < parts.length - 1) {
+            utterance.onend = () => {
+                // 次の音声を再生
+                if (currentUtterances[index + 1]) {
+                    window.speechSynthesis.speak(currentUtterances[index + 1]);
+                }
+            };
+        }
+
+        currentUtterances.push(utterance);
     });
+
+    // 4. 最初のブロック（日本語）の再生を開始する
+    if (currentUtterances.length > 0) {
+        window.speechSynthesis.speak(currentUtterances[0]);
+    }
 }
+
+function stopVoiceGuidance() {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+    }
+    currentUtterances = [];
+}
+    
 
 function forwardProgress() {
     if (routeFinished || timetable.length === 0 || currentIndex >= timetable.length) return;
