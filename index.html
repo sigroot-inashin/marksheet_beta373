@@ -796,7 +796,9 @@ function playVoiceGuidance(target) {
     if (!("speechSynthesis" in window)) return;
     try { window.speechSynthesis.cancel(); } catch(e){}
 
-    const segments = text.split(/([^\x00-\x7F]+[\s、。]*)/g).filter(p => p.trim() !== "");
+    // 【改善点】。やドットを基準、あるいは明示的に日本語と英語の境界線で切り分ける
+    // もしくは、元の分割規則を維持しつつ、数字（半角・全角）を各言語ブロックに正しく帰属させる
+    const segments = text.split(/([^\x00-\x7F０-９]+[\s、。]*)/g).filter(p => p.trim() !== "");
 
     segments.forEach(p => {
         let cleanText = p.trim();
@@ -804,7 +806,8 @@ function playVoiceGuidance(target) {
 
         const ut = new SpeechSynthesisUtterance(cleanText);
         
-        if (/[^\x00-\x7F]/.test(cleanText)) {
+        // 全角数字を含めて日本語文字が含まれているか、またはアルファベットを含まない場合は日本語
+        if (/[^\x00-\x7F]/.test(cleanText) && !/[a-zA-Z]/.test(cleanText)) {
             ut.lang = "ja-JP"; 
             ut.rate = 1.05; 
             ut.pitch = 1.0;
@@ -825,7 +828,6 @@ function playVoiceGuidance(target) {
         window.speechSynthesis.speak(ut);
     });
 }
-
 
 function forwardProgress() {
     if (routeFinished || timetable.length === 0 || currentIndex >= timetable.length) return;
