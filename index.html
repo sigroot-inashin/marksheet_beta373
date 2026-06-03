@@ -779,52 +779,6 @@ function refreshDisplay() {
 
     let currentUtterances = []; // 再生中の音声インスタンスを管理
 function playVoiceGuidance(target) {
-
-    // ===== 伊那路放送用 読み上げ補正 =====
-
-// 駅名
-text = text.replace(/新しろ/g, "新城");
-text = text.replace(/号しゃ/g, "号車");
-text = text.replace(/とまります/g, "停まります");
-// 日本語列車名
-text = text
-.replace(/伊那路1号/g,"いなじいちごう")
-.replace(/伊那路2号/g,"いなじにごう")
-.replace(/伊那路3号/g,"いなじさんごう")
-.replace(/伊那路4号/g,"いなじよんごう");
-
-// 日本語号車
-text = text
-.replace(/1号車/g,"いちごうしゃ")
-.replace(/2号車/g,"にごうしゃ")
-.replace(/3号車/g,"さんごうしゃ")
-.replace(/4号車/g,"よんごうしゃ")
-.replace(/5号車/g,"ごごうしゃ")
-.replace(/6号車/g,"ろくごうしゃ");
-
-// 英語 Number
-text = text
-.replace(/number\s*[１1]/gi,"number one")
-.replace(/number\s*[２2]/gi,"number two")
-.replace(/number\s*[３3]/gi,"number three")
-.replace(/number\s*[４4]/gi,"number four")
-.replace(/number\s*[５5]/gi,"number five")
-.replace(/number\s*[６6]/gi,"number six");
-
-// 英語 Car
-text = text
-.replace(/car\s*[１1]/gi,"car one")
-.replace(/car\s*[２2]/gi,"car two")
-.replace(/car\s*[３3]/gi,"car three")
-.replace(/car\s*[４4]/gi,"car four")
-.replace(/car\s*[５5]/gi,"car five")
-.replace(/car\s*[６6]/gi,"car six");
-
-// toilets car 1 → toilets car one
-text = text
-.replace(/toilets?\s+car\s*[１1]/gi,"toilets car one")
-.replace(/toilets?\s+car\s*[２2]/gi,"toilets car two")
-.replace(/toilets?\s+car\s*[３3]/gi,"toilets car three");
     if (!target || routeFinished) return;
     
     let text = target.rawAnnounce.replace(/JR/g, "ジェイアール");
@@ -870,8 +824,6 @@ text = text
         
         window.speechSynthesis.speak(ut);
     });
-
-    
 }
 
 
